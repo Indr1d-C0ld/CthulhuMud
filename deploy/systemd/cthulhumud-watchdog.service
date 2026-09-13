@@ -1,0 +1,10 @@
+[Unit]
+Description=CthulhuMud (Evennia) - controllo periodico e restart automatico in caso di crash
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=randolph
+Group=randolph
+WorkingDirectory=/data/claude/CthulhuMud/game
+ExecStart=/data/claude/CthulhuMud/venv/bin/evennia start

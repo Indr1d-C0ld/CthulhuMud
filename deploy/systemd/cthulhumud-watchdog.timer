@@ -1,0 +1,10 @@
+[Unit]
+Description=Esegue il controllo/restart automatico di CthulhuMud ogni 5 minuti
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

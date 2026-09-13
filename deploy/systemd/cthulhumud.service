@@ -1,0 +1,19 @@
+[Unit]
+Description=CthulhuMud (Evennia) - avvio server+portal
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=randolph
+Group=randolph
+WorkingDirectory=/data/claude/CthulhuMud/game
+ExecStart=/data/claude/CthulhuMud/venv/bin/evennia start
+ExecStop=/data/claude/CthulhuMud/venv/bin/evennia stop
+ExecReload=/data/claude/CthulhuMud/venv/bin/evennia reload
+TimeoutStartSec=120
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target

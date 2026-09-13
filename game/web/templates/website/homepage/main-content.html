@@ -1,0 +1,58 @@
+{% load static %}
+<img src="{% static "website/images/banner_cthulhumud.webp" %}" alt="CthulhuMud Redux"
+    class="img-fluid mb-3" style="max-width:100%;border-radius:6px;" />
+
+<p class="lead">Un porting italiano, fedele e in continua espansione, dello storico MUD lovecraftiano
+    CthulhuMUD, costruito sul motore Evennia.</p>
+
+<p>
+    Vestirai i panni di un investigatore, un occultista o qualcosa di ancora meno umano, in un
+    mondo dove la conoscenza proibita ha un prezzo e la sanit&agrave; mentale &egrave; una risorsa
+    che si consuma, non solo un numero sulla scheda. Esplora Arkham e il Cairo, attraversa le
+    Dreamlands, scegli un dio a cui votarti, o diventa tu stesso qualcosa di non-morto: Lich,
+    Vampiro o Licantropo, con tutto cio&apos; che questo comporta.
+</p>
+
+{% if webclient_enabled %}
+<p><a href="{% url 'webclient:index' %}" class="playbutton">Gioca dal browser!</a></p>
+{% endif %}
+
+{% if telnet_enabled %}
+<p>
+    Telnet: <strong>{{ server_hostname }}</strong>, porta
+    {% for port in telnet_ports %}
+    {% if not forloop.first and forloop.last %} oppure
+    {% elif forloop.counter != 1 %},
+    {% endif %}
+    <strong>{{ port }}</strong>
+    {% endfor %}
+</p>
+{% endif %}
+{% if telnet_ssl_enabled %}
+<p>
+    Telnet (SSL): <strong>{{ server_hostname }}</strong>, porta
+    {% for port in telnet_ssl_ports %}
+    {% if not forloop.first and forloop.last %} oppure
+    {% elif forloop.counter != 1 %},
+    {% endif %}
+    <strong>{{ port }}</strong>
+    {% endfor %}
+</p>
+{% endif %}
+{% if ssh_enabled %}
+<p>
+    SSH: <strong>{{ server_hostname }}</strong>, porta
+    {% for port in ssh_ports %}
+    {% if not forloop.first and forloop.last %} oppure
+    {% elif forloop.counter != 1 %},
+    {% endif %}
+    <strong>{{ port }}</strong>
+    {% endfor %}
+</p>
+{% endif %}
+
+<p>
+    Non hai ancora un account? Puoi crearne uno direttamente da qui (in alto a destra,
+    &quot;Registrati&quot;) oppure, una volta connesso via telnet o dal browser, con il comando
+    <code>create &lt;nomeutente&gt; &lt;password&gt;</code>.
+</p>

@@ -1,0 +1,28 @@
+# Ambiente virtuale Python (rigenerabile con requirements.txt/pip)
+venv/
+__pycache__/
+*.py[cod]
+
+# Corpus di ricerca: mirror della documentazione pubblica del sito
+# originale cthulhumud.com, usato come riferimento in fase di sviluppo
+# ma non ridistribuito in questo repo pubblico per ragioni di copyright
+# (non e' materiale scritto da noi). Resta nel backup privato.
+research/
+
+# Database, log, processi e segreti runtime di Evennia
+game/server/*.db3
+game/server/logs/
+game/server/*.pid
+game/server/*.restart
+game/server/.static/*
+game/server/.media/*
+game/server/conf/secret_settings.py
+
+# Artefatti di compilazione del Codex (rigenerabili con codex/build.sh)
+codex/documento.html
+codex/corpo.html
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
