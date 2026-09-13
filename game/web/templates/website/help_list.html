@@ -1,0 +1,127 @@
+{% extends "website/base.html" %}
+
+{% block titleblock %}
+{{ view.page_title }}
+{% endblock %}
+
+{% block content %}
+
+{% load addclass static %}
+<div class="row">
+  <div class="col">
+    <div class="card">
+      <div class="card-body">
+        <h1 class="card-title">{{ view.page_title }}</h1>
+        <hr />
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'help' %}">Indice dell'Aiuto</a></li>
+        </ol>
+        <hr />
+
+        <!-- Il Codex -->
+        <div class="card border-light mb-3">
+          <div class="card-body">
+            <h4 class="card-title">📖 Il Codex di CthulhuMud</h4>
+            <p>Il manuale di gioco completo: oltre 130 pagine su personaggio, magia, combattimento, economia, luoghi, comunicazione e strumenti di staff, con le fonti sempre citate.</p>
+            <a class="btn btn-info" href="{% static 'website/codex/codex_cthulhumud.pdf' %}" target="_blank">Apri il Codex (PDF)</a>
+          </div>
+        </div>
+        <!-- fine Il Codex -->
+
+        <div class="row">
+          {% regroup object_list by web_help_category as category_list %}
+
+          {% if category_list %}
+          <!-- left column -->
+          <div class="col-lg-9 col-sm-12">
+
+            <!-- intro -->
+            <div class="card border-light">
+              <div class="card-body">
+                <p>Questa sezione del sito è una guida alle meccaniche di {{ game_name }}.</p>
+                <p>È organizzata per categoria e poi per argomento. Il riquadro a destra permette di saltare direttamente a una categoria.</p>
+              </div>
+            </div>
+            <hr />
+            <!-- end intro -->
+
+            <!-- index list -->
+            <div class="mx-3">
+              {% for web_help_category in category_list %}
+              <h5><a id="{{ web_help_category.grouper }}"></a>{{ web_help_category.grouper|title }}</h5>
+              <ul>
+                  {% for object in web_help_category.list %}
+                  <li>
+                      <a href="{{ object.web_get_detail_url }}">{{ object|title }}</a>
+                      {% if object.web_get_admin_url %}
+                          {% if user.is_staff %}
+                              <a href="{{ object.web_get_admin_url }}">-modifica-</a>
+                          {% endif %}
+                      {% endif %}
+                  </li>
+                  {% endfor %}
+              </ul>
+              {% endfor %}
+              <!-- end index list -->
+            </div>
+
+          </div>
+          <!-- end left column -->
+
+          <!-- right column (index) -->
+          <div class="col-lg-3 col-sm-12">
+            {% if user.is_staff %}
+            <!-- admin button -->
+            <a class="btn btn-info btn-block mb-3" href="/admin/help/helpentry/">Amministrazione</a>
+            <!-- end admin button -->
+            <hr />
+            {% endif %}
+
+            <div class="card mb-3">
+              <div class="card-header">Indice per categoria</div>
+
+              <ul class="list-group list-group-flush">
+                {% for category in category_list %}
+                <a href="#{{ category.grouper }}" class="list-group-item">{{ category.grouper|title }}</a>
+                {% endfor %}
+              </ul>
+
+            </div>
+          </div>
+          <!-- end right column -->
+          {% else %}
+          {% if user.is_staff %}
+          <div class="col-lg-12 col-sm-12">
+            <div class="alert alert-warning" role="alert">
+              <h4 class="alert-heading">Ehi, membro dello staff {{ user.get_username }}!</h4>
+              <hr />
+              <p><strong>La sezione Aiuto è al momento vuota!</strong></p>
+              <p>Stai perdendo un'occasione per attrarre visitatori (e potenzialmente nuovi giocatori) verso {{ game_name }}!</p>
+              <p>Usa il <a href="https://github.com/evennia/evennia/wiki/Help-System#database-help-entries" class="alert-link" target="_blank">sistema di help</a> di Evennia per raccontare al mondo il tuo universo, la sua lore, i suoi popoli e le sue creature, i loro usi e conflitti!</p>
+              <p>Non servono competenze di programmazione: scrivere voci di aiuto non è più complicato che scrivere un'email o un post di blog. Una volta pubblicata la prima voce, questi avvisi spariranno e questa pagina diventerà un indice di tutto ciò che avrai scritto su {{ game_name }}.</p>
+              <p>Quello che scrivi viene prima o poi indicizzato dai motori di ricerca, quindi più scrivi su come funziona {{ game_name }}, maggiore sarà la tua presenza sul web — e il traffico che attirerai.
+              <p>Tutto ciò che scrivi può essere consultato sia su questo sito sia in gioco, tramite i comandi di aiuto.</p>
+              <hr>
+              <p class="mb-0"><a href="/admin/help/helpentry/add/" class="alert-link">Clicca qui</a> per iniziare a scrivere su {{ game_name }}!</p>
+            </div>
+          </div>
+          {% endif %}
+
+          <div class="col-lg-12 col-sm-12">
+            <div class="alert alert-secondary" role="alert">
+              <h4 class="alert-heading">In costruzione!</h4>
+              <p>Grazie per l'interesse, ma stiamo ancora sviluppando e documentando l'universo di {{ game_name }} qui sul sito — nel frattempo trovi tutto nel Codex qui sopra, o in gioco con il comando <code>help</code>.</p>
+              <p>Torna più avanti per maggiori informazioni man mano che le pubblichiamo.</p>
+              <hr>
+              <p class="mb-0"><a href="{% url 'index' %}" class="alert-link">Clicca qui</a> per tornare alla pagina principale.</p>
+            </div>
+          </div>
+          {% endif %}
+
+        </div>
+        <hr />
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
