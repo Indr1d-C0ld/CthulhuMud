@@ -62,7 +62,14 @@ class Script(DefaultScript):
      create(key, **kwargs)
      start() - start script (this usually happens automatically at creation
                and obj.script.add() etc)
-     stop()  - stop script, and delete it
+     stop()  - ATTENZIONE: contrariamente a quanto diceva questo docstring
+               (ereditato da una vecchia versione di Evennia e corretto
+               nell'audit globale pre-beta), stop() NON cancella lo script:
+               si limita a mettere is_active=False lasciando la riga nel
+               database. Per rimuoverlo davvero serve delete(). La versione
+               sbagliata di questa riga ha gia' causato due bug reali in
+               questo progetto: accumulo illimitato di righe e resurrezione
+               di effetti annullati. Vedi la nota estesa in world/effetti.py.
      pause() - put the script on hold, until unpause() is called. If script
                is persistent, the pause state will survive a shutdown.
      unpause() - restart a previously paused script. The script will continue
@@ -213,12 +220,34 @@ class RigenerazioneScript(Script):
         self.persistent = True
         self.start_delay = True
 
-    def at_repeat(self):
+    def _riarma_con_intervallo_casuale(self):
+        """Ri-arma il timer con un nuovo intervallo nel range della fonte.
+
+        DEVE essere chiamata fuori da at_repeat (vedi la nota li' sotto)."""
         import random
+
+        if self.pk:
+            self.start(interval=random.randint(15, 45), force_restart=True)
+
+    def at_repeat(self):
+        from evennia.utils import delay
         from world.posizione import applica_tick_rigenerazione
         from evennia.objects.models import ObjectDB
 
-        self.start(interval=random.randint(15, 45), force_restart=True)
+        # BUG REALE trovato nell'audit globale pre-beta: qui c'era una
+        # chiamata diretta a self.start(..., force_restart=True). Ri-armare
+        # il timer dall'INTERNO del proprio callback ferma e ricrea il task
+        # mentre il task stesso e' in esecuzione (vedi
+        # evennia/scripts/scripts.py:_start_task -> _stop_task, e l'assert
+        # "Tried to start an already running ExtendedLoopingCall"): il
+        # risultato e' uno script che resta is_active=True ma senza alcun
+        # timer armato, cioe' morto. In produzione la rigenerazione di
+        # HP/mana/movimento era completamente ferma, e il difetto era
+        # invisibile perche' `is_active` continuava a dire True.
+        # delay(0, ...) rinvia il ri-armo al giro successivo del reattore,
+        # cioe' a callback concluso, conservando la variabilita' casuale
+        # dell'intervallo confermata dalla fonte (helps/tick.txt).
+        delay(0, self._riarma_con_intervallo_casuale)
 
         personaggi = ObjectDB.objects.filter(
             db_typeclass_path="typeclasses.characters.Character"
@@ -273,17 +302,34 @@ class CorpseDecayScript(Script):
 
     def at_repeat(self):
         # self.obj potrebbe essere gia' stato rimosso da un altro percorso
-        # (es. un futuro comando "loot corpse"): controllo difensivo per
-        # non lasciare tracebook nei log in quel caso.
-        obj = self.obj
-        if not obj or not obj.pk:
-            return
-        stanza = obj.location
-        if stanza:
-            for contenuto in list(obj.contents):
-                contenuto.move_to(stanza, quiet=True, move_type="drop")
-            stanza.msg_contents(f"{obj.key} si dissolve in polvere.")
-        obj.delete()
+        # (es. saccheggio del cadavere, o la cancellazione dell'NPC che lo
+        # ha generato). Audit globale pre-beta: il controllo difensivo
+        # `if not obj or not obj.pk` NON bastava, perche' in Evennia e' il
+        # semplice ACCESSO a self.obj a sollevare l'eccezione quando
+        # l'oggetto e' stato cancellato ("This object was already
+        # deleted!"). Nei log di produzione questo script e' infatti la
+        # prima causa di errori, con tre sintomi diversi
+        # (already deleted / campo id mancante / FOREIGN KEY constraint).
+        # Qui si intercetta qualunque problema e ci si limita a rimuovere
+        # lo script, che a quel punto non ha piu' nulla da fare.
+        try:
+            obj = self.obj
+            if not obj or not obj.pk:
+                self.delete()
+                return
+            stanza = obj.location
+            if stanza:
+                for contenuto in list(obj.contents):
+                    contenuto.move_to(stanza, quiet=True, move_type="drop")
+                stanza.msg_contents(f"{obj.key} si dissolve in polvere.")
+            obj.delete()
+        except Exception:
+            from evennia.utils import logger
+            logger.log_trace("CorpseDecayScript: cadavere gia' rimosso, script eliminato.")
+            try:
+                self.delete()
+            except Exception:
+                pass
 
 
 class RepopScript(Script):

@@ -119,10 +119,19 @@ class LivingMixin:
         tenta_assist(bersaglio, self)
 
     def ferma_combattimento(self):
+        """Sgancia dal combattimento ed elimina lo script del round.
+
+        Audit globale pre-beta: qui c'era `.stop()`, che in Evennia 6.1
+        disattiva lo script ma NON cancella la riga dal database (vedi la
+        nota estesa in world/effetti.py). Ogni combattimento mai avvenuto
+        lasciava quindi una riga permanente: in un server di produzione
+        destinato a restare acceso per mesi e' una perdita senza limite
+        (all'audit ne erano gia' accumulate 22 su un database di sviluppo).
+        Tutti gli script di combattimento vengono eliminati, non solo il
+        primo, per ripulire anche eventuali duplicati preesistenti."""
         self.db.combat_target = None
-        script = self.scripts.get("combat_round")
-        if script:
-            script[0].stop()
+        for script in self.scripts.get("combat_round"):
+            script.delete()
 
     def calcola_hit_chance(self, difensore, forza_disarmato=False):
         """Percentuale (5-95) di andare a segno. Se si impugna un'arma non

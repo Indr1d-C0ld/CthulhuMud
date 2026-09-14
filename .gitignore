@@ -11,6 +11,9 @@ research/
 
 # Database, log, processi e segreti runtime di Evennia
 game/server/*.db3
+game/server/*.db3-journal
+game/server/*.db3-wal
+game/server/*.db3-shm
 game/server/logs/
 game/server/*.pid
 game/server/*.restart

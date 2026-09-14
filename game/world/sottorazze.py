@@ -291,13 +291,19 @@ def applica_buff_temporaneo(personaggio, campo, delta, durata_secondi, messaggio
     valore_precedente stantio di uno script vecchio invece che a quello
     del buff realmente in corso (o di trattare un rinnovo come se non
     ci fosse nulla di attivo, quando invece c'e')."""
+    # Quarta correzione (audit globale pre-beta): `.stop()` lasciava la riga
+    # nel database (vedi la nota in world/effetti.py), da cui sia l'accumulo
+    # descritto sopra sia il rischio che il workaround di riavvio la
+    # resuscitasse ripristinando un valore_precedente ormai stantio.
+    # Con `.delete()` il filtro su is_active qui sotto diventa una semplice
+    # cintura di sicurezza per le righe gia' presenti nel database.
     esistenti = [s for s in personaggio.scripts.get(f"buff_{campo}") if s.is_active]
     if esistenti:
         valore_precedente = esistenti[0].db.valore_precedente
-        for script_vecchio in esistenti:
-            script_vecchio.stop()
     else:
         valore_precedente = getattr(personaggio.db, campo, 0) or 0
+    for script_vecchio in personaggio.scripts.get(f"buff_{campo}"):
+        script_vecchio.delete()
     setattr(personaggio.db, campo, (getattr(personaggio.db, campo, 0) or 0) + delta)
     script = personaggio.scripts.add(
         "typeclasses.scripts.SottorazzaBuffExpireScript",

@@ -26,6 +26,17 @@ invece di scrivere un sistema ad hoc per ciascuno:
 - applica_danno_periodico: N colpi di danno a intervalli regolari
   (Veleno, Peste) - si autodistrugge da solo dopo l'ultimo colpo.
 
+NOTA sulla terminazione degli script (audit globale pre-beta): qui si
+usa sempre `.delete()` e MAI `.stop()`. In Evennia 6.1 `.stop()` si
+limita a mettere `is_active=False` lasciando la riga nel database
+(nonostante il docstring ereditato dalla classe base affermi il
+contrario). Le righe cosi' abbandonate causavano due problemi reali:
+si accumulavano senza limite, e venivano RESUSCITATE a ogni riavvio
+dal workaround in server/conf/at_server_startstop.py - che quindi
+rimetteva in moto anche effetti annullati di proposito (una cecita'
+gia' curata, i buff azzerati alla morte del personaggio). `.delete()`
+dis-arma il timer e rimuove davvero la riga.
+
 Semplificazione dichiarata: nessuno di questi stati impedisce di per
 se' l'esecuzione di ALTRI comandi oltre a quelli esplicitamente
 elencati sopra (es. "cieco" non blocca LOOK, "muto" non blocca i
@@ -43,7 +54,21 @@ def applica_stato(personaggio, stato, secondi, messaggio_scadenza=None):
     """Imposta db.stati[stato] = True e programma la rimozione automatica.
     Riassegna esplicitamente db.stati dopo la mutazione (stessa cautela
     gia' usata altrove nel progetto, es. world/yithian.py:YITH ADAPT, per
-    garantire che la modifica venga davvero salvata)."""
+    garantire che la modifica venga davvero salvata).
+
+    Bug reale corretto (audit globale pre-beta): assegnare `script.interval`
+    come semplice attributo NON arma il timer del reattore - lo script
+    resta con is_active=False e time_until_next_repeat()=None, quindi lo
+    stato non scadeva MAI (fino al primo riavvio del server, dove il
+    workaround in server/conf/at_server_startstop.py lo riattivava). E'
+    la stessa classe di bug gia' corretta due volte in questo progetto
+    (RigenerazioneScript, poi applica_buff_temporaneo e _mistform/_rage):
+    la cura e' chiamare .start(interval=..., force_restart=True).
+    Corretto qui anche il rinnovo: riapplicare uno stato gia' attivo
+    creava un SECONDO script, e la scadenza del primo rimuoveva lo stato
+    mentre il secondo era ancora in corso."""
+    for vecchio in personaggio.scripts.get(f"stato_{stato}"):
+        vecchio.delete()
     stati = personaggio.db.stati or {}
     stati[stato] = True
     personaggio.db.stati = stati
@@ -51,9 +76,9 @@ def applica_stato(personaggio, stato, secondi, messaggio_scadenza=None):
         "typeclasses.scripts.StatoScadenzaScript",
         key=f"stato_{stato}",
     )
-    script.interval = secondi
     script.db.stato = stato
     script.db.messaggio_scadenza = messaggio_scadenza
+    script.start(interval=secondi, force_restart=True)
 
 
 def rimuovi_stato(personaggio, stato):
@@ -63,7 +88,7 @@ def rimuovi_stato(personaggio, stato):
         stati.pop(stato, None)
         personaggio.db.stati = stati
     for script in personaggio.scripts.get(f"stato_{stato}"):
-        script.stop()
+        script.delete()
 
 
 CAMPI_BUFF_NUMERICI = (
@@ -84,9 +109,9 @@ def rimuovi_tutti_gli_effetti_magici(personaggio):
     stati = personaggio.db.stati or {}
     for stato in list(stati.keys()):
         for script in personaggio.scripts.get(f"periodico_{stato}"):
-            script.stop()
+            script.delete()
         for script in personaggio.scripts.get(f"stato_{stato}"):
-            script.stop()
+            script.delete()
     personaggio.db.stati = {}
     for campo in CAMPI_BUFF_NUMERICI:
         setattr(personaggio.db, campo, 0)
@@ -104,14 +129,17 @@ def rendi_invisibile(personaggio, secondi, messaggio_scadenza=None):
     di LOOK e dalla ricerca dei comandi (kill, cast, ecc.), salvo per
     chi ha un livello sufficientemente piu' alto o lo stato
     "vede_invisibile" attivo."""
+    for vecchio in personaggio.scripts.get("invis_scadenza"):
+        vecchio.delete()
     personaggio.db.invisibile = True
     script = personaggio.scripts.add(
         "typeclasses.scripts.StatoScadenzaScript",
         key="invis_scadenza",
     )
-    script.interval = secondi
     script.db.campo_bool = "invisibile"
     script.db.messaggio_scadenza = messaggio_scadenza
+    # vedi applica_stato() per il bug del timer mai armato corretto qui
+    script.start(interval=secondi, force_restart=True)
 
 
 def applica_danno_periodico(bersaglio, stato, danno_min, danno_max, secondi_tick,
@@ -119,6 +147,8 @@ def applica_danno_periodico(bersaglio, stato, danno_min, danno_max, secondi_tick
     """Infligge danno (danno_min..danno_max) ogni secondi_tick, per
     numero_tick colpi totali (Veleno, Peste); imposta anche lo stato
     (es. "avvelenato") per la durata dell'effetto, rimosso alla fine."""
+    for vecchio in bersaglio.scripts.get(f"periodico_{stato}"):
+        vecchio.delete()
     stati = bersaglio.db.stati or {}
     stati[stato] = True
     bersaglio.db.stati = stati
@@ -126,7 +156,6 @@ def applica_danno_periodico(bersaglio, stato, danno_min, danno_max, secondi_tick
         "typeclasses.scripts.EffettoPeriodicoScript",
         key=f"periodico_{stato}",
     )
-    script.interval = secondi_tick
     script.db.danno_min = danno_min
     script.db.danno_max = danno_max
     script.db.tick_totali = numero_tick
@@ -134,6 +163,9 @@ def applica_danno_periodico(bersaglio, stato, danno_min, danno_max, secondi_tick
     script.db.stato = stato
     script.db.messaggio_tick = messaggio_tick
     script.db.messaggio_fine = messaggio_fine
+    # vedi applica_stato() per il bug del timer mai armato corretto qui:
+    # prima di questa correzione veleno/peste non infliggevano MAI danno
+    script.start(interval=secondi_tick, force_restart=True)
 
 
 def applica_cura_periodica(bersaglio, cura_min, cura_max, secondi_tick, numero_tick,
@@ -141,14 +173,17 @@ def applica_cura_periodica(bersaglio, cura_min, cura_max, secondi_tick, numero_t
     """Variante 'cura' di applica_danno_periodico, per incantesimi come
     Rigenerazione: nessuno stato associato (una guarigione extra non ha
     bisogno di essere rimossa esplicitamente, si esaurisce da sola)."""
+    for vecchio in bersaglio.scripts.get("periodico_rigenerazione"):
+        vecchio.delete()
     script = bersaglio.scripts.add(
         "typeclasses.scripts.EffettoPeriodicoScript",
         key="periodico_rigenerazione",
     )
-    script.interval = secondi_tick
     script.db.danno_min = cura_min
     script.db.danno_max = cura_max
     script.db.tick_totali = numero_tick
     script.db.tick_fatti = 0
     script.db.cura = True
     script.db.messaggio_tick = messaggio_tick
+    # vedi applica_stato() per il bug del timer mai armato corretto qui
+    script.start(interval=secondi_tick, force_restart=True)
