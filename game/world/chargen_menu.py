@@ -343,12 +343,27 @@ def menunode_scegli_nome(caller, raw_string="", **kwargs):
 def _errore_validita_nome(caller, nome):
     """None se il nome e' valido e disponibile, altrimenti un messaggio
     d'errore. Non modifica nulla - vedi _check_nome/_accetta_nome_suggerito
-    per chi poi assegna davvero char.key."""
+    per chi poi assegna davvero char.key.
+
+    Bug reale corretto (audit globale pre-beta, scoperto collaudando la
+    registrazione di un giocatore nuovo): il controllo guardava solo
+    `Character.objects.filter_family()`, che NON comprende gli NPC -
+    nel progetto `NPC` e `Character` sono classi sorelle, non una
+    sottoclasse dell'altra. Il generatore di nomi casuali propose cosi'
+    "Prescott", che e' anche il nome del gioielliere di Arkham: il
+    personaggio venne creato lo stesso e da quel momento ogni ricerca
+    per nome (LOOK, KILL, GIVE, e l'ingresso in gioco stesso) diventava
+    ambigua fra il giocatore e l'NPC. Ora si verificano entrambe le
+    famiglie, cosi' un giocatore non puo' piu' prendere il nome di un
+    personaggio non giocante gia' esistente nel mondo."""
     if not nome or not nome.isalpha() or len(nome) < 3:
         return "Il nome deve contenere solo lettere ed essere lungo almeno 3 caratteri"
-    candidati = Character.objects.filter_family(db_key__iexact=nome)
-    if len(candidati):
+    from typeclasses.npcs import NPC
+
+    if Character.objects.filter_family(db_key__iexact=nome).exists():
         return f"|w{nome}|n non e' disponibile"
+    if NPC.objects.filter_family(db_key__iexact=nome).exists():
+        return f"|w{nome}|n e' gia' il nome di un abitante di questo mondo"
     return None
 
 

@@ -105,7 +105,16 @@ def rimuovi_tutti_gli_effetti_magici(personaggio):
     stato attivo (incluse le sue eventuali scadenze/danni periodici, non
     solo la voce in db.stati - stessa cautela di world/staff.py:restaura,
     qui estesa a TUTTI gli stati invece del sottoinsieme curabile da
-    RESTORE) e azzera i buff/malus numerici temporanei."""
+    RESTORE) e azzera i buff/malus numerici temporanei.
+
+    Completato nell'audit globale pre-beta. Mancavano tre cose perche'
+    "tutti gli effetti" fosse davvero vero:
+    1. i campi numerici venivano azzerati, ma gli script di scadenza dei
+       buff restavano vivi: piu' tardi sarebbero scattati RIPRISTINANDO i
+       valori precedenti, annullando cioe' la pulizia appena fatta;
+    2. l'invisibilita' magica (db.invisibile, che non vive in db.stati)
+       sopravviveva alla morte, quindi si rinasceva ancora invisibili;
+    3. restava vivo anche il suo script di scadenza."""
     stati = personaggio.db.stati or {}
     for stato in list(stati.keys()):
         for script in personaggio.scripts.get(f"periodico_{stato}"):
@@ -113,8 +122,20 @@ def rimuovi_tutti_gli_effetti_magici(personaggio):
         for script in personaggio.scripts.get(f"stato_{stato}"):
             script.delete()
     personaggio.db.stati = {}
+
+    # buff numerici: prima si eliminano gli script, poi si azzerano i campi
+    # (l'ordine conta: al contrario, uno script che scattasse nel frattempo
+    # rimetterebbe il valore precedente)
+    for campo in CAMPI_BUFF_NUMERICI:
+        for script in personaggio.scripts.get(f"buff_{campo}"):
+            script.delete()
     for campo in CAMPI_BUFF_NUMERICI:
         setattr(personaggio.db, campo, 0)
+
+    # invisibilita' magica: flag fuori da db.stati, con script dedicato
+    for script in personaggio.scripts.get("invis_scadenza"):
+        script.delete()
+    personaggio.db.invisibile = False
 
 
 def ha_stato(personaggio, stato):

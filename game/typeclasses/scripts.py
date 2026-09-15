@@ -390,21 +390,30 @@ class StatoScadenzaScript(Script):
         self.repeats = 1
 
     def at_repeat(self):
+        from evennia.utils import delay
+
         obj = self.obj
-        if not obj or not obj.pk:
-            return
-        stato = self.db.stato
-        if stato and obj.db.stati:
-            stati = obj.db.stati
-            stati.pop(stato, None)
-            obj.db.stati = stati
-        campo_bool = self.db.campo_bool
-        if campo_bool:
-            # variante per flag booleani fuori da db.stati (es. db.invisibile
-            # per Invisibilita'/Invisibilita' di Massa - Fase K, sesta tornata)
-            setattr(obj.db, campo_bool, False)
-        if self.db.messaggio_scadenza:
-            obj.msg(self.db.messaggio_scadenza)
+        if obj and obj.pk:
+            stato = self.db.stato
+            if stato and obj.db.stati:
+                stati = obj.db.stati
+                stati.pop(stato, None)
+                obj.db.stati = stati
+            campo_bool = self.db.campo_bool
+            if campo_bool:
+                # variante per flag booleani fuori da db.stati (es. db.invisibile
+                # per Invisibilita'/Invisibilita' di Massa - Fase K, sesta tornata)
+                setattr(obj.db, campo_bool, False)
+            if self.db.messaggio_scadenza:
+                obj.msg(self.db.messaggio_scadenza)
+        # Esaurito il suo compito, lo script si elimina: con `repeats = 1`
+        # Evennia lo ferma soltanto, e in Evennia 6.1 fermare NON cancella
+        # la riga (vedi la nota in world/effetti.py), che resterebbe quindi
+        # nel database per sempre - una per ogni effetto magico mai scaduto.
+        # L'eliminazione e' rinviata al giro successivo del reattore per non
+        # distruggere lo script mentre il suo stesso callback e' in corso
+        # (stessa cautela adottata per il ri-armo di RigenerazioneScript).
+        delay(0, self.delete)
 
 
 class EffettoPeriodicoScript(Script):
@@ -423,7 +432,11 @@ class EffettoPeriodicoScript(Script):
     def at_repeat(self):
         obj = self.obj
         if not obj or not obj.pk or not getattr(obj, "vivo", True):
-            self.stop()
+            # bersaglio morto o sparito: l'effetto non ha piu' senso.
+            # Eliminare (non solo fermare) per non lasciare righe residue,
+            # e fuori dal callback in corso - vedi StatoScadenzaScript.
+            from evennia.utils import delay
+            delay(0, self.delete)
             return
         import random
         quantita = self.db.danno_min
@@ -457,7 +470,10 @@ class EffettoPeriodicoScript(Script):
                 obj.db.stati = stati
             if self.db.messaggio_fine:
                 obj.msg(self.db.messaggio_fine)
-            self.stop()
+            # come in StatoScadenzaScript: eliminare, non solo fermare, e
+            # farlo fuori dal callback in corso
+            from evennia.utils import delay
+            delay(0, self.delete)
 
 
 class CristalliFocusScript(Script):
