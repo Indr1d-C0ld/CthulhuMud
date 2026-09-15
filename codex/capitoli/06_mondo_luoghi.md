@@ -13,7 +13,7 @@ Il mondo di gioco è ambientato negli anni '20 del XX secolo. Ad oggi le zone ef
 - **Il relitto dello U-29** ("Nightmare Submarine"), un piccolo dungeon autoconclusivo di 23 stanze al largo della costa di Arkham.
 - **L'Ufficio della Gilda dei Cacciatori di Taglie** a Dylath-Leen.
 
-A queste si aggiungono quattro **hub di partenza** per altrettante professioni newbie che esistono finora solo come tre stanze placeholder (RECALL/RESPAWN/MORGUE), senza un'area esplorabile costruita intorno: Y'ha-nthlei (Profondi), la Nave Madre Mi-Go, la Struttura di Addestramento su Yuggoth (Mi-Go) e la Grande Biblioteca Yithiana. Sono segnalati più sotto, nella sezione "Altri luoghi", come lacuna dichiarata piuttosto che ambientazioni complete: a differenza di Arkham, Cairo, Ulthar, Zoog Village e del sommergibile, per questi quattro non esiste (ancora) alcuna guida di sito raccolta che ne descriva la geografia, quindi nessuna area è stata costruita oltre le tre stanze minime necessarie a far funzionare la creazione del personaggio.
+A queste si aggiungono quattro **aree di partenza non umane** — Y'ha-nthlei dei Profondi, la Nave Madre Mi-Go, la Struttura di Addestramento su Yuggoth e la Grande Biblioteca Yithiana — descritte più sotto nella sezione dedicata. A differenza di Arkham, Cairo, Ulthar, Zoog Village e del sommergibile, per queste quattro il sito originale non pubblica alcuna mappa: sono quindi una **scelta di design di questo porting**, costruita direttamente sui racconti di Lovecraft.
 
 Arkham stessa contiene anche l'hub di RECALL/RESPAWN/MORGUE della professione universitaria (Sala Comune della Miskatonic University / Infermeria del campus / Mortis & Carver): a differenza dei quattro hub sopra, qui l'area è pienamente integrata nella città vera e propria, non una stanza isolata.
 
@@ -298,16 +298,19 @@ Il relitto si raggiunge dai Moli Passeggeri di Arkham tramite l'uscita **"largo"
 
 Confermato dalla fonte (*helps/bounty.txt*): *"players can go on missions for the Dylath-Leen Bounty Hunters Guild."* L'ufficio, con il suo impiegato NPC che tiene un registro di taglie e missioni, è collegato alla stanza di RECALL del Riformatorio di Dylath-Leen, con lo stesso schema di bottega-satellite già usato per la Fucina di Maro a Ulthar.
 
-### Hub non ancora sviluppati oltre le stanze minime
+### Le quattro aree di partenza non umane
 
-Quattro hub di partenza restano, per ora, tre semplici stanze placeholder (RECALL, RESPAWN, MORGUE) senza un'area esplorabile costruita intorno, per assenza di materiale di fonte raccolto finora sulla loro geografia:
+Queste quattro aree nascono da una lacuna trovata nell'audit precedente al rilascio in beta: le stanze di RECALL/RESPAWN/MORGUE di questi hub erano state create **senza alcuna uscita**, e poiché la creazione del personaggio vi colloca il giocatore, chi sceglieva una di queste professioni nasceva in una stanza da cui era letteralmente impossibile muoversi. Sono ora aree percorribili, collegate al resto del mondo.
 
-- **Y'ha-nthlei** (Il Nido dei Profondi / Infermeria / Obitorio) — hub della professione dei Profondi.
-- **La Nave Madre Mi-Go** (Corridoio / Impianto di Riciclaggio) — hub Mi-Go.
-- **La Struttura di Addestramento Primario su Yuggoth** (Camera Medica) — secondo hub Mi-Go.
-- **La Grande Biblioteca Yithiana** (Centro del Giardino a Cupola / Infermeria) — hub della professione Yithiana.
+Il sito originale non pubblica alcuna mappa di queste zone: la loro geografia è dichiaratamente una **scelta di design di questo porting**, costruita sui racconti di Lovecraft anziché su materiale della fonte.
 
-Sono segnalati qui, esplicitamente, come lacuna dichiarata: bastano a rendere funzionante la creazione del personaggio in quelle professioni, ma non sono ancora ambientazioni da esplorare.
+**Y'ha-nthlei**, la città sommersa dei Profondi (*La maschera di Innsmouth*), si stende sotto la Barriera del Diavolo: le Terrazze Ciclopiche fanno da piazza, con i templi gemelli di Padre Dagon e Madre Hydra, i Giardini di Corallo Nero dove si coltivano molluschi grandi quanto un uomo, e l'Orlo dell'Abisso, da cui sale un respiro lentissimo. Si raggiunge emergendo nel mare aperto fra Arkham e il Cairo — o immergendovisi.
+
+**La Nave Madre Mi-Go** (*Colui che sussurrava nelle tenebre*) staziona sopra il cimitero della Città Vecchia di Arkham, dove cala il proprio portellone. A bordo: la Volta dei Cilindri, dove i cervelli umani sono conservati in contenitori metallici con tre strumenti avvitati — uno per udire, uno per parlare, uno per vedere — la Sala Chirurgica, e un blister di osservazione affacciato sulle stelle.
+
+**Yuggoth** è il mondo d'origine dei Mi-Go ai margini del sistema solare: terrazze nere, un fiume di pece troppo freddo perché scorrere sia altro che una concessione, giardini fungini coltivati in file geometriche e una torre senza finestre. Vi si arriva dalla nave madre, l'unico mezzo che faccia la spola.
+
+**La Grande Biblioteca Yithiana** (*L'ombra venuta dal tempo*) custodisce negli Archivi delle Ere il resoconto di ogni epoca, comprese quelle non ancora avvenute, e in un corridoio poco frequentato una botola sigillata da cui, di tanto in tanto, arriva un soffio d'aria. Poiché la città della Grande Razza si trova nel tempo profondo e non sarebbe raggiungibile a piedi, l'accesso passa dalle Dreamlands — l'unico luogo del gioco in cui la distanza è mentale prima che fisica. È anch'essa una scelta dichiarata.
 
 ## Giorno, notte e illuminazione
 
