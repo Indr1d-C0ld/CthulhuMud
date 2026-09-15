@@ -292,7 +292,10 @@ AREE = {
         ],
         # Yuggoth si raggiunge dalla nave madre: e' il vascello a fare la
         # spola, come nei testi.
-        "ancora_interna": ("migo_mothership", "baia", "terrazze_nere", "condotto", "nave madre"),
+        # Il nome dell'uscita e' "yuggoth" e non "condotto": nella baia esiste
+        # gia' un "condotto inferiore" che porta alla stiva, e due uscite dal
+        # nome quasi identico nella stessa stanza si scambiano per sbaglio.
+        "ancora_interna": ("migo_mothership", "baia", "terrazze_nere", "yuggoth", "nave madre"),
     },
     # -----------------------------------------------------------------
     "yithian_library": {
