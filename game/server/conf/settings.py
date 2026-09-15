@@ -45,6 +45,31 @@ GAME_SLOGAN = "Il gioco di ruolo online basato sui Miti di Cthulhu"
 TELNET_PORTS = [8889]
 
 ######################################################################
+# Ascolto in dual-stack (IPv4 + IPv6): SOLO per il telnet.
+#
+# I default di Evennia sono "0.0.0.0", cioe' solo IPv4, mentre il nome
+# pubblico di questo server pubblica anche un record AAAA: un client con
+# connettivita' IPv6 prova quella per prima e trova la porta chiusa.
+# Tutti gli altri servizi della macchina (SSH, Samba, la BBS sulla 2222)
+# sono gia' in dual-stack. Con net.ipv6.bindv6only = 0, impostazione di
+# questo sistema, un singolo socket su "::" serve entrambi i protocolli.
+#
+# ATTENZIONE - il WEBSERVER deve restare su IPv4. Provato in dual-stack e
+# subito rientrato: e' un limite di Evennia stesso, non della nostra
+# configurazione. In evennia/server/webserver.py:76 c'e'
+#     client_ip, port = self.transport.client
+# che assume una tupla di DUE elementi, come su IPv4; su IPv6 quella
+# tupla ne ha quattro (host, porta, flowinfo, scope-id) e ogni singola
+# richiesta HTTP muore con
+#     ValueError: too many values to unpack (expected 2)
+# lasciando il sito irraggiungibile su ENTRAMBI i protocolli. Stessa
+# prudenza per il websocket del client web, che passa per la medesima
+# infrastruttura. Se un domani Evennia correggera' quella riga, si
+# potranno portare a "::" anche queste due.
+######################################################################
+TELNET_INTERFACES = ["::"]
+
+######################################################################
 # Localizzazione italiana. Evennia disabilita l'i18n di default e la
 # traduzione italiana che distribuisce e' solo una bozza parziale (~24%);
 # l'abbiamo completata noi (vedi game/locale/README.md) e la rendiamo

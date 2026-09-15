@@ -1,14 +1,31 @@
+{% comment %}
+Quando un conteggio e' zero, la vista di Evennia
+(evennia/web/website/views/index.py) non passa 0 ma la stringa inglese
+"no one", che finiva cosi' in chiaro nella pagina italiana
+("Ci sono attualmente no one connessi"). Non potendo cambiare la vista
+della libreria, la si traduce qui. Riguarda num_accounts_connected e
+num_accounts_registered_recent, gli unici due con quel trattamento.
+{% endcomment %}
 <div class="card">
     <h4 class="card-header text-center">Account</h4>
 
     <div class="card-body">
         <p>
+            {% if num_accounts_connected == "no one" %}
+            Al momento non c'e' <strong>nessuno</strong> connesso, su un totale di
+            {% else %}
             Ci sono attualmente <strong>{{num_accounts_connected}}</strong> connessi su un totale di
+            {% endif %}
             <strong>{{num_accounts_registered}}</strong> account registrati.
         </p>
         <p>
-            Di questi, <strong>{{num_accounts_registered_recent}}</strong> sono stati creati questa
-            settimana, e <strong>{{num_accounts_connected_recent}}</strong> si sono connessi negli
+            Di questi,
+            {% if num_accounts_registered_recent == "no one" %}
+            <strong>nessuno</strong> e' stato creato
+            {% else %}
+            <strong>{{num_accounts_registered_recent}}</strong> sono stati creati
+            {% endif %}
+            questa settimana, e <strong>{{num_accounts_connected_recent}}</strong> si sono connessi negli
             ultimi sette giorni.
         </p>
     </div>
