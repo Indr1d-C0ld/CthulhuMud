@@ -127,3 +127,46 @@ La scelta è deliberata, non un compromesso per mancanza di tempo: il motore MOB
 3. Popolare il mondo con il nuovo mostro tramite il sistema di popolamento/reset dell'area (`world/popola_mostri.py` e affini), che richiama `crea_mostro()` con la nuova chiave.
 
 In altre parole: **aggiungere un mostro è una modifica di codice**, sottoposta allo stesso ciclo di revisione/deploy di qualunque altra funzionalità del gioco, non un'attività di "contenuto" separata riservata a un ruolo di builder senza accesso al sorgente — perché quel ruolo, in questo progetto, semplicemente non esiste.
+
+## Salute del server: il controllo del "battito"
+
+Dieci secondi dopo ogni avvio, il gioco verifica da solo che i sei
+**script globali** — quelli che fanno letteralmente battere il cuore del
+mondo — stiano davvero girando: rigenerazione di HP/mana/movimento,
+fame e sete, ripopolamento dei mostri, vagabondaggio dei mostri,
+cristalli focus e interesse bancario. Se ne trova uno fermo, lo riavvia
+e lascia nel log una riga di avviso come questa:
+
+```
+[WW] battito: RigenerazioneScript era fermo (nessun timer armato) ed e' stato riavviato.
+```
+
+**Vedere questa riga non è di per sé un allarme**: è il controllo che
+fa il proprio lavoro. Nella configurazione attuale compare in modo
+sistematico per `RigenerazioneScript` dopo ogni riavvio, perché quello
+script si ri-arma da solo con un intervallo casuale (15-45 secondi, come
+da fonte) e il motore non lo ripristina spontaneamente dopo un riavvio.
+Se invece la riga comparisse per **altri** script globali, varrebbe la
+pena indagare: significherebbe che qualcos'altro si è inceppato.
+
+Il motivo per cui questo controllo esiste merita di essere conosciuto da
+chi amministra il gioco. Un difetto di questa famiglia è **silenzioso**:
+uno script può risultare "attivo" in ogni interrogazione al database e
+al tempo stesso non avere alcun timer in funzione, quindi non eseguirsi
+mai. Prima del rilascio in beta era esattamente la condizione in cui si
+trovava la rigenerazione: nessun personaggio recuperava HP, mana o
+movimento, e nulla nell'interfaccia lo segnalava.
+
+Da qui due regole pratiche per chi diagnostica problemi:
+
+- **Il campo "attivo" di uno script non è una prova che stia girando.**
+  L'unica verifica attendibile è che manchi poco al suo prossimo scatto
+  (`time_until_next_repeat()` diverso da "nessuno").
+- **Le verifiche sugli script vanno fatte dentro il server in esecuzione**
+  (per esempio con `@py` da una sessione di gioco), non da una shell
+  separata: una shell non condivide i timer del processo del server e
+  mostrerebbe come fermi anche script perfettamente sani.
+
+Allo stesso avvio il gioco elimina anche gli script effimeri rimasti
+orfani del proprio oggetto (per esempio quelli di un cadavere nel
+frattempo rimosso), che altrimenti produrrebbero errori quando scattano.
