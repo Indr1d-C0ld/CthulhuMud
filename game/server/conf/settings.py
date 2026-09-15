@@ -70,6 +70,42 @@ TELNET_PORTS = [8889]
 TELNET_INTERFACES = ["::"]
 
 ######################################################################
+# Accesso al sito tramite Apache in HTTPS, su /cthulhumud/
+#
+# Motivo: la porta 4001 e' una porta anomala e molte reti (aziendali,
+# mobili, hotspot pubblici) scartano in silenzio il traffico verso porte
+# non standard - il sintomo e' una lunga attesa seguita da timeout,
+# esattamente quello osservato. La 443 invece funziona gia' dall'esterno,
+# perche' serve le altre piattaforme di questo server, ed e' in
+# dual-stack, quindi risolve insieme anche il problema IPv6 descritto
+# sopra. Vedi deploy/apache/ per la configurazione del proxy.
+#
+# FORCE_SCRIPT_NAME dice a Django di generare tutti gli URL con il
+# prefisso /cthulhumud: e' Apache a rimuoverlo prima di inoltrare la
+# richiesta a Evennia. CONSEGUENZA DA CONOSCERE: da questo momento
+# l'accesso DIRETTO a http://<indirizzo>:4001/ mostra ancora la
+# homepage, ma i collegamenti interni puntano a /cthulhumud/... e non
+# funzionano su quella porta. L'accesso buono diventa quello via HTTPS.
+######################################################################
+FORCE_SCRIPT_NAME = "/cthulhumud"
+STATIC_URL = "/cthulhumud/static/"
+MEDIA_URL = "/cthulhumud/media/"
+
+# Django 4+ richiede che le origini HTTPS siano dichiarate, altrimenti
+# ogni invio di modulo (login, registrazione) fallisce con errore CSRF.
+CSRF_TRUSTED_ORIGINS = ["https://timrouter.dns.army"]
+
+# Dietro un proxy, Django deve sapere che la connessione con il browser
+# e' cifrata anche se quella verso Evennia non lo e', altrimenti genera
+# URL "http://" dentro una pagina servita in HTTPS.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
+
+# Il client web di gioco apre un websocket: va indirizzato al percorso
+# proxato, non alla porta 4002 diretta (bloccata dagli stessi firewall).
+WEBSOCKET_CLIENT_URL = "wss://timrouter.dns.army/cthulhumud/ws"
+
+######################################################################
 # Localizzazione italiana. Evennia disabilita l'i18n di default e la
 # traduzione italiana che distribuisce e' solo una bozza parziale (~24%);
 # l'abbiamo completata noi (vedi game/locale/README.md) e la rendiamo

@@ -32,3 +32,19 @@ urlpatterns = [
 
 # 'urlpatterns' must be named such for Django to find it.
 urlpatterns = urlpatterns + evennia_default_urlpatterns
+
+# Compatibilita' con l'accesso DIRETTO alla porta 4001.
+#
+# Il sito e' pensato per stare dietro Apache su https://.../cthulhumud/
+# (vedi FORCE_SCRIPT_NAME in server/conf/settings.py e deploy/apache/):
+# Django genera quindi tutti gli URL con quel prefisso, ed e' Apache a
+# rimuoverlo prima di inoltrare la richiesta. Chi pero' apre il sito
+# direttamente sulla porta 4001 - dalla rete locale, o per diagnosi -
+# riceve pagine i cui collegamenti puntano a /cthulhumud/..., che senza
+# Apache davanti non corrisponderebbero a nulla. Montando gli stessi
+# percorsi anche sotto quel prefisso, entrambe le vie funzionano.
+urlpatterns = urlpatterns + [
+    path("cthulhumud/", include("web.website.urls")),
+    path("cthulhumud/webclient/", include("web.webclient.urls")),
+    path("cthulhumud/admin/", include("web.admin.urls")),
+]

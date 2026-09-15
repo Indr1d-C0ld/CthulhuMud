@@ -11,7 +11,9 @@ inglese.
     <span class="navbar-toggler-icon"></span>
   </button>
 
-  <a class="navbar-brand" href="/">
+  {# href generato da Django, non scritto a mano: dietro il proxy il sito
+     vive sotto /cthulhumud/ e un "/" fisso porterebbe fuori dal gioco #}
+  <a class="navbar-brand" href="{% url 'index' %}">
     <div class="media">
       <img class="d-flex navbar-brand-logo mx-3" src="{% static "website/images/evennia_logo.png" %}"
         alt="logo {{game_name}}" />
