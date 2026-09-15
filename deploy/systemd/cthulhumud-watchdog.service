@@ -7,4 +7,10 @@ Type=oneshot
 User=randolph
 Group=randolph
 WorkingDirectory=/data/claude/CthulhuMud/game
+# Stesso motivo spiegato in cthulhumud.service: senza il venv nel PATH
+# `evennia start` non trova `twistd` e il riavvio automatico dopo un
+# crash non avverrebbe mai (fallendo per giunta in silenzio, dato che
+# il timer si limita a rilanciare il comando ogni 5 minuti).
+Environment="PATH=/data/claude/CthulhuMud/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="VIRTUAL_ENV=/data/claude/CthulhuMud/venv"
 ExecStart=/data/claude/CthulhuMud/venv/bin/evennia start

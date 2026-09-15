@@ -9,6 +9,16 @@ RemainAfterExit=yes
 User=randolph
 Group=randolph
 WorkingDirectory=/data/claude/CthulhuMud/game
+# INDISPENSABILE: `evennia start` lancia i processi tramite `twistd`, che
+# vive dentro il venv e NON si trova nel PATH minimo che systemd assegna
+# ai servizi (/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin). Senza
+# questa riga l'avvio fallisce con
+#   "Portal process error: [Errno 2] No such file or directory: 'twistd'"
+# e il gioco non riparte al boot. Difetto scoperto eseguendo il primo vero
+# riavvio a freddo durante l'audit: fino a quel momento si erano sempre
+# usati dei `reload` su processi gia' avviati a mano, che non passano da qui.
+Environment="PATH=/data/claude/CthulhuMud/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="VIRTUAL_ENV=/data/claude/CthulhuMud/venv"
 ExecStart=/data/claude/CthulhuMud/venv/bin/evennia start
 ExecStop=/data/claude/CthulhuMud/venv/bin/evennia stop
 ExecReload=/data/claude/CthulhuMud/venv/bin/evennia reload
