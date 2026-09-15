@@ -205,7 +205,7 @@ AREE = {
                 "Corridoi di basalto larghi come strade, fiancheggiati da casse "
                 "metalliche alte tre volte un uomo. Ogni cassa contiene il "
                 "resoconto di un'epoca, scritto da qualcuno che quell'epoca "
-                "l'ha visitata di persona, occupando un corpo presi in prestito.",
+                "l'ha visitata di persona, occupando corpi presi in prestito.",
             ),
             "archivi": (
                 "Gli Archivi delle Ere",
