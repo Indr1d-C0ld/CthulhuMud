@@ -4,6 +4,24 @@ After=network-online.target
 
 [Service]
 Type=oneshot
+# INDISPENSABILE, e tutt'altro che ovvio: senza questa riga il watchdog
+# avvia il gioco e lo UCCIDE nello stesso istante, rendendolo inutile.
+# Un servizio Type=oneshot, terminato l'ExecStart, si disattiva; alla
+# disattivazione systemd ripulisce il suo cgroup e abbatte ogni processo
+# rimasto dentro - compresi Portal e Server appena avviati, che vi
+# finiscono perche' `evennia start` li demonizza da li'. Nel log si
+# vedeva "Evennia Server successfully started." seguito, nello stesso
+# secondo, da "Received SIGTERM, shutting down."
+# KillMode=process limita l'abbattimento al solo processo principale
+# (il lanciatore, gia' uscito), lasciando vivi i suoi figli.
+# La unit principale non ha questo problema perche' usa RemainAfterExit
+# (resta attiva, quindi il cgroup non viene mai ripulito); qui non si
+# puo' fare altrettanto, perche' un timer non puo' riattivare una unit
+# che risulta gia' attiva.
+# Difetto trovato simulando un crash vero (kill -9) e verificando se il
+# watchdog recuperasse davvero: finche' il gioco era sano, il watchdog
+# non faceva nulla e sembrava funzionare perfettamente.
+KillMode=process
 User=randolph
 Group=randolph
 WorkingDirectory=/data/claude/CthulhuMud/game
