@@ -11,8 +11,12 @@ inglese.
     <span class="navbar-toggler-icon"></span>
   </button>
 
-  {# href generato da Django, non scritto a mano: dietro il proxy il sito
-     vive sotto /cthulhumud/ e un "/" fisso porterebbe fuori dal gioco #}
+  {% comment %}
+  href generato da Django, non scritto a mano: dietro il proxy il sito
+  vive sotto /cthulhumud/ e un "/" fisso porterebbe fuori dal gioco.
+  (Nota: la forma {# ... #} vale solo su UNA riga; scritta su due righe
+  non viene riconosciuta come commento e finisce visibile in pagina.)
+  {% endcomment %}
   <a class="navbar-brand" href="{% url 'index' %}">
     <div class="media">
       <img class="d-flex navbar-brand-logo mx-3" src="{% static "website/images/evennia_logo.png" %}"

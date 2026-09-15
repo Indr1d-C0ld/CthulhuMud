@@ -33,18 +33,19 @@ urlpatterns = [
 # 'urlpatterns' must be named such for Django to find it.
 urlpatterns = urlpatterns + evennia_default_urlpatterns
 
-# Compatibilita' con l'accesso DIRETTO alla porta 4001.
+# NOTA (da non rifare): qui erano stati montati gli stessi percorsi anche
+# sotto "cthulhumud/", per far funzionare l'accesso diretto alla porta
+# 4001 con gli URL prefissati che Django genera per il proxy
+# (FORCE_SCRIPT_NAME, vedi server/conf/settings.py).
 #
-# Il sito e' pensato per stare dietro Apache su https://.../cthulhumud/
-# (vedi FORCE_SCRIPT_NAME in server/conf/settings.py e deploy/apache/):
-# Django genera quindi tutti gli URL con quel prefisso, ed e' Apache a
-# rimuoverlo prima di inoltrare la richiesta. Chi pero' apre il sito
-# direttamente sulla porta 4001 - dalla rete locale, o per diagnosi -
-# riceve pagine i cui collegamenti puntano a /cthulhumud/..., che senza
-# Apache davanti non corrisponderebbero a nulla. Montando gli stessi
-# percorsi anche sotto quel prefisso, entrambe le vie funzionano.
-urlpatterns = urlpatterns + [
-    path("cthulhumud/", include("web.website.urls")),
-    path("cthulhumud/webclient/", include("web.webclient.urls")),
-    path("cthulhumud/admin/", include("web.admin.urls")),
-]
+# Sembrava innocuo ed era invece dannoso: `reverse()` risolve un nome di
+# rotta sull'ULTIMO pattern registrato con quel nome, quindi i duplicati
+# vincevano su quelli veri e Django generava indirizzi con il prefisso
+# RADDOPPIATO - e per giunta sbagliati, perche' i nomi di web.website e
+# web.webclient collidono fra loro. Il link del logo, per dire, puntava a
+# /cthulhumud/cthulhumud/webclient/ invece che alla homepage.
+#
+# Si accetta quindi il compromesso: l'accesso buono e' quello via Apache
+# in HTTPS; aprire direttamente la porta 4001 mostra le pagine ma con i
+# collegamenti e i fogli di stile non risolti, ed e' utile solo per
+# diagnosi rapide.
