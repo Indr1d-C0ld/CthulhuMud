@@ -312,6 +312,27 @@ Il sito originale non pubblica alcuna mappa di queste zone: la loro geografia è
 
 **La Grande Biblioteca Yithiana** (*L'ombra venuta dal tempo*) custodisce negli Archivi delle Ere il resoconto di ogni epoca, comprese quelle non ancora avvenute, e in un corridoio poco frequentato una botola sigillata da cui, di tanto in tanto, arriva un soffio d'aria. Poiché la città della Grande Razza si trova nel tempo profondo e non sarebbe raggiungibile a piedi, l'accesso passa dalle Dreamlands — l'unico luogo del gioco in cui la distanza è mentale prima che fisica. È anch'essa una scelta dichiarata.
 
+#### Come sono organizzate: nucleo sicuro e profondità
+
+Tutte e quattro seguono la stessa pianta, e la ragione è di progettazione oltre che narrativa. Attorno alla stanza in cui il personaggio nasce si estende un **nucleo sicuro**: templi, botteghe, sale del consiglio, laboratori, abitati solo da creature che non attaccano. Da qualche parte, ai suoi margini, c'è una **stanza-soglia** la cui descrizione avverte senza mezzi termini — il Pozzo Cieco di Y'ha-nthlei («più in là non si torna a nuoto: chi attraversa ha già deciso»), il Condotto Inferiore della nave madre, la Cava Esterna di Yuggoth, il Corridoio Discendente della biblioteca. Oltre quella soglia comincia la **profondità**, e lì le creature si comportano esattamente per quello che sono: aggrediscono a vista, come fa ogni predatore del bestiario.
+
+La separazione è dunque spaziale, non una deroga al comportamento dei mostri. Un personaggio appena creato non incontra nulla di letale finché non sceglie deliberatamente di attraversare un varco che gli è stato descritto come senza ritorno. Le creature delle profondità non vagano: restano dove sono, perché altrimenti potrebbero risalire la soglia al contrario e vanificare l'intero impianto.
+
+Queste aree hanno un **ripopolamento automatico** proprio, agganciato allo stesso ciclo che rigenera i mostri di Arkham e delle altre zone: una creatura uccisa ricompare dopo qualche minuto, con le statistiche fisse che il bestiario le assegna — il livello non cambia mai, né scala con quello del giocatore.
+
+#### Chi ci vive, e cosa vende
+
+Ogni area ha i propri abitanti, che non si limitano a stare fermi: parlano, lavorano, osservano. Il sacerdote di Padre Dagon depone offerte e attende risposta; l'archivista Mi-Go tocca un cilindro e una voce metallica supplica prima di essere zittita; lo scriba della Grande Razza incide una data che preferiresti non aver letto; il più vecchio dei Vecchi ricorda Innsmouth quando aveva ancora un porto.
+
+Ciascuna ospita inoltre una bottega, con merci che appartengono alla propria cultura e non ad altre:
+
+| luogo | mercante | esempi di merce |
+|---|---|---|
+| Il Mercato delle Conchiglie | una Profonda dai monili d'oro | diademi d'oro di Innsmouth, arpioni da profondità, perle scaramantiche per chi scende oltre il Pozzo Cieco |
+| Il Deposito dei Congegni | un Mi-Go registratore | cilindri vuoti, lenti per vedere altrove, bisturi Mi-Go, resina rigenerante |
+| Il Mercato Fungino | un Mi-Go coltivatore anziano | funghi luminosi, spore soporifere, maschere da estrazione per le miniere |
+| Il Banco dei Curatori | un curatore della Grande Razza | lastre metalliche vergini, stili da incisione, indici delle ere |
+
 ## Giorno, notte e illuminazione
 
 ### L'orologio di gioco

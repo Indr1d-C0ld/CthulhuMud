@@ -93,6 +93,35 @@ AREE = {
                 "scuro che porta alla citta'. I pescatori del continente sanno "
                 "di non gettare le reti da queste parti.",
             ),
+            "mercato": (
+                "Il Mercato delle Conchiglie",
+                "Banchi di pietra levigata dove i Profondi barattano cio' che "
+                "l'oceano concede e cio' che le navi perdono. L'oro di Innsmouth "
+                "e' ammucchiato con la noncuranza che si riserva alla sabbia: "
+                "qui vale come ornamento, non come ricchezza.",
+            ),
+            "consiglio": (
+                "La Sala del Consiglio dei Vecchi",
+                "Seggi di basalto disposti in cerchio, quasi tutti occupati da "
+                "figure cosi' antiche e cosi' immobili che le incrostazioni le "
+                "hanno saldate al proprio posto. Nessuno di loro dorme: "
+                "semplicemente, non hanno piu' nulla da dirsi in fretta.",
+            ),
+            "pozzo": (
+                "Il Pozzo Cieco",
+                "Un varco circolare nella roccia, oltre il quale la "
+                "bioluminescenza della citta' non arriva. I Profondi vi hanno "
+                "inciso attorno un segno che, in qualunque lingua lo si legga, "
+                "vuol dire la stessa cosa: piu' in la' non si torna a nuoto. "
+                "Chi attraversa ha gia' deciso.",
+            ),
+            "rovine": (
+                "Le Rovine Pre-Umane",
+                "Cio' che resta di una citta' che era antica quando Y'ha-nthlei "
+                "fu fondata sopra di essa. Gli angoli delle mura non tornano, "
+                "come se la geometria di chi le innalzo' non fosse la stessa "
+                "che regge quest'acqua. Qualcosa qui sotto e' rimasto.",
+            ),
             "abisso": (
                 "L'Orlo dell'Abisso",
                 "Oltre l'ultima terrazza il fondale finisce di colpo e comincia "
@@ -107,7 +136,11 @@ AREE = {
             ("terrazze", "tempio_hydra", "tempio di hydra", "terrazze"),
             ("terrazze", "giardini", "giardini", "terrazze"),
             ("terrazze", "barriera", "su", "giu"),
-            ("giardini", "abisso", "abisso", "indietro"),
+            ("terrazze", "mercato", "mercato", "terrazze"),
+            ("terrazze", "consiglio", "consiglio", "terrazze"),
+            ("giardini", "pozzo", "pozzo cieco", "indietro"),
+            ("pozzo", "abisso", "abisso", "pozzo"),
+            ("pozzo", "rovine", "rovine", "pozzo"),
             ("hub:respawn", "terrazze", "fuori", "infermeria"),
             ("hub:morgue", "terrazze", "fuori", "obitorio"),
         ],
@@ -137,6 +170,34 @@ AREE = {
                 "formano piu' le costellazioni che credevi di conoscere. Una di "
                 "esse, molto fioca e molto lontana, e' casa per chi pilota.",
             ),
+            "deposito": (
+                "Il Deposito dei Congegni",
+                "File di contenitori aperti, ciascuno con dentro strumenti che "
+                "non hanno un nome umano. Un Mi-Go tiene il registro di cio' che "
+                "entra e di cio' che esce, e talvolta scambia volentieri: la "
+                "Terra produce materiali che su Yuggoth non crescono.",
+            ),
+            "camera_ali": (
+                "La Camera delle Ali",
+                "Qui i Mi-Go riparano le proprie membrane dopo i passaggi "
+                "nell'etere. L'aria sa di ozono e di qualcosa di organico che "
+                "brucia piano. Sulle rastrelliere, ali di ricambio - e non tutte "
+                "appartenevano a chi le indossera'.",
+            ),
+            "condotto": (
+                "Il Condotto Inferiore",
+                "Un passaggio stretto che scende verso la stiva. Il ronzio "
+                "cambia tono qui: diventa piu' basso, quasi un avvertimento. "
+                "Sulla paratia, simboli incisi che l'equipaggio evita di "
+                "guardare mentre passa.",
+            ),
+            "stiva": (
+                "La Stiva dei Campioni",
+                "Gabbie e vasche allineate, alcune vuote, alcune no. I campioni "
+                "provengono da mondi diversi e sono tenuti vivi perche' morti "
+                "non servirebbero. Qualcuno di loro, dietro il vetro, ti guarda "
+                "con un'espressione che riconosci troppo bene.",
+            ),
             "baia": (
                 "Baia di Attracco",
                 "Il portellone inferiore della nave madre, aperto sul vuoto. Le "
@@ -150,6 +211,10 @@ AREE = {
             ("volta_cilindri", "sala_chirurgica", "sala chirurgica", "volta"),
             ("volta_cilindri", "blister", "blister", "volta"),
             ("hub:recall", "baia", "baia", "corridoio"),
+            ("volta_cilindri", "deposito", "deposito", "volta"),
+            ("volta_cilindri", "camera_ali", "camera delle ali", "volta"),
+            ("baia", "condotto", "condotto inferiore", "baia"),
+            ("condotto", "stiva", "stiva", "condotto"),
             ("hub:morgue", "volta_cilindri", "fuori", "riciclaggio"),
         ],
         "ancora": ("Il Cimitero della Citta' Vecchia", "baia", "discendi", "risali"),
@@ -178,6 +243,34 @@ AREE = {
                 "si voltano piano al tuo passaggio, benche' non abbiano nulla "
                 "con cui voltarsi.",
             ),
+            "mercato_fungino": (
+                "Il Mercato Fungino",
+                "Sotto una volta di miceli intrecciati, i Mi-Go scambiano "
+                "colture, utensili e sostanze. Nessuno contratta a voce: il "
+                "prezzo viene ronzato, e chi non sa ronzare paga quello che gli "
+                "viene detto.",
+            ),
+            "miniere": (
+                "Le Miniere di Tok'l",
+                "Gallerie scavate nella pietra nera per estrarre il metallo con "
+                "cui i Mi-Go costruiscono i loro cilindri. Il minerale non "
+                "riflette la luce: la assorbe, e restituisce al suo posto un "
+                "leggero tepore che sulle dita resta per ore.",
+            ),
+            "cava": (
+                "La Cava Esterna",
+                "L'imboccatura a cielo aperto delle miniere, dove il vento "
+                "sottile di Yuggoth solleva polvere nera. Le squadre di "
+                "estrazione si fermano sempre qui prima di scendere, e chi "
+                "risale conta i compagni prima di togliersi la maschera.",
+            ),
+            "fondo": (
+                "Il Fondo della Miniera",
+                "L'ultimo livello, dove lo scavo si e' fermato di colpo e non e' "
+                "mai ripreso. La parete di fondo non e' pietra: e' liscia, "
+                "curva, e cede appena sotto la mano, come se dall'altra parte "
+                "qualcosa respirasse contro di essa.",
+            ),
             "torre": (
                 "La Torre Senza Finestre",
                 "Un cilindro di pietra nera che sale per centinaia di metri, "
@@ -191,6 +284,10 @@ AREE = {
             ("terrazze_nere", "fiume_pece", "fiume", "terrazze"),
             ("terrazze_nere", "giardini_fungini", "giardini", "terrazze"),
             ("terrazze_nere", "torre", "torre", "terrazze"),
+            ("terrazze_nere", "mercato_fungino", "mercato", "terrazze"),
+            ("terrazze_nere", "cava", "cava", "terrazze"),
+            ("cava", "miniere", "miniere", "cava"),
+            ("miniere", "fondo", "fondo", "miniere"),
             ("hub:morgue", "terrazze_nere", "fuori", "camera medica"),
         ],
         # Yuggoth si raggiunge dalla nave madre: e' il vascello a fare la
@@ -222,6 +319,34 @@ AREE = {
                 "sola linea retta dove un essere umano ne metterebbe una. Il "
                 "cielo ha un colore che non ricorderai bene, dopo.",
             ),
+            "curatori": (
+                "Il Banco dei Curatori",
+                "Un lungo piano di metallo dove la Grande Razza fornisce a chi "
+                "consulta gli strumenti necessari: lastre vergini, stili, "
+                "lenti. Nulla viene regalato - ogni cosa e' annotata, e "
+                "l'annotazione durera' piu' di te.",
+            ),
+            "macchine": (
+                "La Sala delle Macchine Ronzanti",
+                "Congegni alti come case, di funzione ignota, che ronzano a un "
+                "ritmo lentissimo e regolare. Un Yithiano vi si accosta ogni "
+                "tanto per correggere qualcosa di impercettibile. Si dice che "
+                "misurino quanto manca.",
+            ),
+            "discesa": (
+                "Il Corridoio Discendente",
+                "Una rampa curva che scende sotto il livello degli archivi. Le "
+                "lastre alle pareti, qui, non raccontano ere: sono avvisi. La "
+                "Grande Razza non usa avvisi per le cose che sa di poter "
+                "gestire.",
+            ),
+            "livelli_inferiori": (
+                "I Livelli Inferiori",
+                "Corridoi che la citta' ha murato e riaperto piu' volte, sempre "
+                "dall'alto. L'aria si muove senza che ci sia una corrente, e in "
+                "alcuni punti la polvere sul pavimento e' stata spostata da "
+                "qualcosa di largo che non ha lasciato impronte.",
+            ),
             "botola": (
                 "La Botola Sigillata",
                 "Una lastra circolare di pietra chiusa da sigilli piu' antichi "
@@ -235,7 +360,11 @@ AREE = {
             ("hub:recall", "navata", "biblioteca", "giardino"),
             ("navata", "archivi", "archivi", "navata"),
             ("navata", "torre_basalto", "torre", "navata"),
-            ("navata", "botola", "corridoio sigillato", "navata"),
+            ("navata", "curatori", "curatori", "navata"),
+            ("navata", "macchine", "macchine", "navata"),
+            ("navata", "discesa", "corridoio discendente", "navata"),
+            ("discesa", "botola", "botola", "discesa"),
+            ("discesa", "livelli_inferiori", "livelli inferiori", "discesa"),
             ("hub:morgue", "navata", "fuori", "infermeria"),
         ],
         "ancora": ("Il Crocevia delle Dreamlands", "torre_basalto", "varco", "biblioteca yithiana"),

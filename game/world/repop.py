@@ -123,7 +123,39 @@ def controlla_e_ripopola_tutte_le_zone(ultimo_reset):
         ultimo_reset[zona] = ora
         if creati:
             risultati.append((zona, creati))
+
+    # Le quattro aree di partenza non umane hanno un ripopolamento
+    # proprio (world/popola_hub_alieni.py): non passano dalla
+    # TABELLA_RESET perche' le loro creature richiedono accorgimenti che
+    # crea_mostro() da solo non applica - devono restare sentinella, o
+    # risalirebbero oltre la soglia fin dentro il nucleo sicuro attorno
+    # alla stanza di nascita. Stessa cadenza delle altre zone.
+    from world.popola_hub_alieni import ripopola_hub_alieni
+
+    intervallo = (
+        INTERVALLO_ZONA_OCCUPATA if zona_occupata_hub_alieni() else INTERVALLO_ZONA_VUOTA
+    )
+    if ora - ultimo_reset.get("hub_alieni", 0) >= intervallo:
+        n = ripopola_hub_alieni()
+        ultimo_reset["hub_alieni"] = ora
+        if n:
+            risultati.append(("hub_alieni", n))
+
     return risultati
+
+
+def zona_occupata_hub_alieni():
+    """Vero se c'e' almeno un personaggio giocante nelle quattro aree.
+    Stessa logica di zona_occupata(), ma su una categoria di tag sola."""
+    from evennia.objects.models import ObjectDB
+
+    for r in ObjectDB.objects.filter(db_typeclass_path="typeclasses.rooms.Room"):
+        if not r.tags.get(category="hub_alieno_room"):
+            continue
+        for o in r.contents:
+            if o.is_typeclass("typeclasses.characters.Character", exact=False):
+                return True
+    return False
 
 
 def avvia_repop():

@@ -44,11 +44,31 @@ PROBABILITA_MOVIMENTO = 0.25
 PROBABILITA_FRASE_AMBIENTE = 0.15
 
 
+def _npc_del_tick():
+    """Una sola interrogazione, due insiemi.
+
+    - "mostri": le creature del bestiario, che vagano e parlano;
+    - "scenografia": gli NPC non ostili (bottegai, sacerdoti, custodi...)
+      a cui e' stata data una lista di frasi_ambiente. Prima non
+      esisteva alcun modo perche' costoro dicessero o facessero nulla:
+      restavano fermi e muti in ogni stanza del gioco. Qui ricevono le
+      stesse battute atmosferiche delle creature, senza pero' vagare -
+      un bottegaio che si allontanasse dalla propria bottega sarebbe un
+      guaio, non un abbellimento."""
+    mostri, scenografia = [], []
+    for o in ObjectDB.objects.filter(db_typeclass_path="typeclasses.npcs.NPC"):
+        if (o.db.hp or 0) <= 0:
+            continue
+        if o.attributes.has("bestiario_chiave"):
+            mostri.append(o)
+        elif o.db.frasi_ambiente:
+            scenografia.append(o)
+    return mostri, scenografia
+
+
 def _mostri_vivi():
-    return [
-        o for o in ObjectDB.objects.filter(db_typeclass_path="typeclasses.npcs.NPC")
-        if o.attributes.has("bestiario_chiave") and (o.db.hp or 0) > 0
-    ]
+    """Compatibilita' con il codice e i test che gia' la usavano."""
+    return _npc_del_tick()[0]
 
 
 def tenta_movimento_mostro(npc):
@@ -104,11 +124,15 @@ def tenta_frase_ambiente(npc):
 
 def tick_movimento_mostri():
     """Chiamata dal tick di MostriMovimentoScript (typeclasses/scripts.py)."""
-    for npc in _mostri_vivi():
+    mostri, scenografia = _npc_del_tick()
+    for npc in mostri:
         if npc.db.combat_target:
             continue
         if not tenta_movimento_mostro(npc):
             tenta_frase_ambiente(npc)
+    # gli NPC di scenografia non si spostano mai: parlano e basta
+    for npc in scenografia:
+        tenta_frase_ambiente(npc)
 
 
 def avvia_movimento_mostri():
