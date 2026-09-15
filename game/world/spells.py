@@ -191,7 +191,11 @@ SPELLS = {
     },
     "enchant_armor": {
         "nome": "Incantare Armatura", "skill_richiesta": "enchant_armor", "costo_mana": 20,
-        "bersaglio_richiesto": True,
+        # Audit pre-beta: non serve indicare un bersaglio - l'effetto agisce
+        # sull'arma impugnata / sull'armatura indossata da chi lancia (vedi
+        # world/magic.py). Dichiararlo obbligava a nominare un bersaglio che
+        # veniva poi ignorato, e senza il quale il lancio era rifiutato.
+        "bersaglio_richiesto": False,
         "descrizione": "Potenzia un'armatura con magia protettiva: ogni lancio riuscito ne "
                        "alza il livello di 1 e ne migliora la classe armatura di 1-2 punti, ma "
                        "un tentativo fallito rischia di danneggiarla o distruggerla (il rischio "
@@ -199,7 +203,11 @@ SPELLS = {
     },
     "enchant_weapon": {
         "nome": "Incantare Arma", "skill_richiesta": "enchant_weapon", "costo_mana": 20,
-        "bersaglio_richiesto": True,
+        # Audit pre-beta: non serve indicare un bersaglio - l'effetto agisce
+        # sull'arma impugnata / sull'armatura indossata da chi lancia (vedi
+        # world/magic.py). Dichiararlo obbligava a nominare un bersaglio che
+        # veniva poi ignorato, e senza il quale il lancio era rifiutato.
+        "bersaglio_richiesto": False,
         "descrizione": "Potenzia un'arma con magia: ogni lancio riuscito ne migliora colpire "
                        "e danno e ne alza il livello di 1; piu' lanci sono possibili sulla "
                        "stessa arma, ma il rischio di danneggiarla sale a ogni successo.",
@@ -631,7 +639,14 @@ SPELLS = {
     },
     "locate_object": {
         "nome": "Localizza Oggetto", "skill_richiesta": "locate_object", "costo_mana": 12,
-        "bersaglio_richiesto": True,
+        # Audit pre-beta: dichiarava "bersaglio_richiesto" ed era quindi
+        # ROTTO. L'effetto cerca per NOME nel mondo intero (world/magic.py),
+        # ma il comando CAST valorizza "testo" solo per gli incantesimi con
+        # richiede_testo: qui restava None e la ricerca nel database falliva
+        # con "Cannot use None as a query value" a ogni lancio. Per giunta
+        # obbligava a indicare un bersaglio presente nella stanza, cioe' un
+        # oggetto che per definizione non c'e' bisogno di localizzare.
+        "bersaglio_richiesto": False, "richiede_testo": True,
         "descrizione": "Rivela la posizione di tutti gli oggetti che corrispondono al nome "
                        "specificato, ovunque nel mondo (non specifica se sono trasportati da "
                        "qualcuno, e alcuni oggetti sono invisibili a questo incantesimo).",
@@ -1495,7 +1510,11 @@ SPELLS = {
     },
     "counter_magic": {
         "nome": "Contromagia", "skill_richiesta": "cancellation", "costo_mana": 15,
-        "bersaglio_richiesto": True, "richiede_testo": True,
+        # Audit pre-beta: "richiede_testo" era dichiarato ma l'effetto non
+        # usa alcun testo (sceglie a caso uno degli effetti attivi, vedi la
+        # nota in world/magic.py). Il giocatore era costretto a digitare
+        # parole qualsiasi, altrimenti il lancio veniva rifiutato.
+        "bersaglio_richiesto": True,
         "descrizione": "Dissolve un singolo effetto magico attivo sul bersaglio (a differenza "
                        "di Cancellazione/Dissolvere la Magia, che li rimuovono tutti insieme).",
     },

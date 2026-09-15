@@ -226,3 +226,68 @@ def stanza_per_ruolo(hub_id, ruolo):
     tag_key = f"{hub_id}_{ruolo}"
     trovate = search.search_tag(tag_key, category=TAG_CATEGORY)
     return trovate[0] if trovate else None
+
+
+# ---------------------------------------------------------------------
+# Collegamento degli hub al mondo costruito
+# ---------------------------------------------------------------------
+#
+# Difetto grave trovato nell'audit pre-beta: le stanze di questo modulo
+# venivano create SENZA alcuna uscita, e la creazione del personaggio vi
+# colloca il giocatore (world/chargen_menu.py). Risultato: 11 delle 16
+# professioni di partenza facevano nascere il personaggio in una stanza
+# da cui era letteralmente impossibile muoversi.
+#
+# Qui si collegano gli hub alle aree gia' costruite del mondo, con uscite
+# nei due sensi. La tabella copre solo gli hub la cui area esiste davvero:
+# per quelli ancora da costruire (Y'ha-nthlei, nave madre Mi-Go, Yuggoth,
+# Biblioteca Yithiana) non c'e' un luogo plausibile a cui agganciarsi, e
+# la scelta su cosa farne e' una decisione di contenuto, non tecnica.
+
+# hub_id -> {
+#   "ancora": chiave della stanza del mondo a cui agganciarsi,
+#   "verso_mondo": nome dell'uscita che porta fuori dall'hub,
+#   "ritorno": {ruolo: nome dell'uscita di ritorno verso quel ruolo},
+# }
+# I nomi di ritorno devono essere DIVERSI fra loro: due uscite omonime
+# nella stessa stanza renderebbero ambiguo il comando di movimento.
+ANCORE_MONDO = {
+    "arkham_miskatonic": {
+        "ancora": "Ingresso della Miskatonic University",
+        "verso_mondo": "atrio",
+        "ritorno": {"recall": "sala comune", "respawn": "infermeria"},
+    },
+}
+
+
+def collega_hub_al_mondo():
+    """Crea le uscite fra le stanze newbie e il mondo gia' costruito.
+
+    Idempotente: non duplica un'uscita gia' presente. Ritorna l'elenco
+    delle uscite create, per poterlo registrare nei log di popolamento."""
+    from evennia.objects.models import ObjectDB
+
+    create_list = []
+    for hub_id, cfg in ANCORE_MONDO.items():
+        ancora = ObjectDB.objects.filter(
+            db_key=cfg["ancora"], db_typeclass_path="typeclasses.rooms.Room"
+        ).first()
+        if not ancora:
+            continue
+        for ruolo, nome_ritorno in cfg["ritorno"].items():
+            stanza = stanza_per_ruolo(hub_id, ruolo)
+            if not stanza:
+                continue
+            if not any(e.key == cfg["verso_mondo"] for e in stanza.exits):
+                create.create_object(
+                    "typeclasses.exits.Exit", key=cfg["verso_mondo"],
+                    location=stanza, destination=ancora,
+                )
+                create_list.append(f"{stanza.key} -[{cfg['verso_mondo']}]-> {ancora.key}")
+            if not any(e.destination == stanza for e in ancora.exits):
+                create.create_object(
+                    "typeclasses.exits.Exit", key=nome_ritorno,
+                    location=ancora, destination=stanza,
+                )
+                create_list.append(f"{ancora.key} -[{nome_ritorno}]-> {stanza.key}")
+    return create_list

@@ -1011,16 +1011,14 @@ msgid "You see"
 msgstr "Vedi"
 
 #: objects/objects.py:2148
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "You become |w{key}|n."
-msgstr ""
-"\n"
-"Diventi |c{name}|n.\n"
+msgstr "Diventi |w{key}|n."
 
 #: objects/objects.py:2327
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "{object} is leaving {origin}, heading for {destination}."
-msgstr "{object} arriva a {destination}."
+msgstr "{object} lascia {origin} e si dirige verso {destination}."
 
 #: objects/objects.py:2339 objects/objects.py:2412
 msgid "somewhere"
@@ -1047,14 +1045,14 @@ msgid "{object} arrives to {destination}."
 msgstr "{object} arriva a {destination}."
 
 #: objects/objects.py:2678 objects/objects.py:2682
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Could not view '{target_name}'."
-msgstr "Impossibile trovare '{query}'."
+msgstr "Non riesci a esaminare '{target_name}'."
 
 #: objects/objects.py:2807
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "You cannot drop {obj}"
-msgstr "Non puoi andare da quella parte."
+msgstr "Non puoi lasciare {obj}"
 
 #: objects/objects.py:2919
 #, python-brace-format
@@ -1122,9 +1120,9 @@ msgid "This is a room."
 msgstr "Questa è una stanza."
 
 #: objects/objects.py:3511
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid " (exit to {destination})"
-msgstr "{object} arriva a {destination}."
+msgstr " (uscita verso {destination})"
 
 #: objects/objects.py:3515
 msgid " (exit)"
@@ -1143,9 +1141,9 @@ msgid "You are already puppeting this object."
 msgstr "Stai già manovrando questo oggetto."
 
 #: accounts/accounts.py:485
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "You don't have permission to puppet '{key}'."
-msgstr "Non hai il permesso di visualizzare o modificare nulla."
+msgstr "Non hai il permesso di controllare '{key}'."
 
 #: accounts/accounts.py:494
 #, python-brace-format
@@ -1174,11 +1172,9 @@ msgid "|c{key}|R is already puppeted by another Account."
 msgstr "|c{key}|R è già manovrato da un altro Account."
 
 #: accounts/accounts.py:534
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "You cannot control any more puppets (max {max_puppets})"
-msgstr ""
-"Non puoi controllare altri personaggi (massimo "
-"{_MAX_NR_SIMULTANEOUS_PUPPETS})"
+msgstr "Non puoi controllare altri personaggi (massimo {max_puppets})"
 
 #: accounts/accounts.py:729
 msgid "Too many login failures; please try again in a few minutes."
