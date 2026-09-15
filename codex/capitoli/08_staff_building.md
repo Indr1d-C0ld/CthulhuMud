@@ -170,3 +170,52 @@ Da qui due regole pratiche per chi diagnostica problemi:
 Allo stesso avvio il gioco elimina anche gli script effimeri rimasti
 orfani del proprio oggetto (per esempio quelli di un cadavere nel
 frattempo rimosso), che altrimenti produrrebbero errori quando scattano.
+
+## Ricostruire il mondo dal codice
+
+Il mondo di CthulhuMUD è stato costruito nel tempo chiamando a mano, una
+per una, decine di funzioni sparse nei moduli di `world/`. Finché il
+database esiste la cosa non si nota; ma se il database andasse perso,
+l'ordine di quelle chiamate esisterebbe solo nella memoria di chi le ha
+fatte. Il comando `costruiscimondo` mette quell'ordine per iscritto, in
+forma eseguibile:
+
+- `costruiscimondo` esegue tutte le fasi di costruzione e popolamento;
+- `costruiscimondo/elenco` mostra le fasi senza eseguirle.
+
+Il comando è **idempotente**: su un mondo già costruito non crea nulla.
+Questo lo rende anche uno strumento di verifica, perché qualunque
+oggetto creato segnala qualcosa che nel mondo manca rispetto a ciò che
+il codice prevede. Alla sua prima esecuzione, per esempio, ha fatto
+comparire un sergente di polizia che nel Commissariato non c'era mai
+stato.
+
+Il mondo è stato ricostruito per intero a partire da un database vuoto,
+ottenendo **240 stanze e 488 uscite identiche** a quelle del mondo in
+esercizio, senza un solo errore. Le poche differenze residue sono scorie
+di gioco e di collaudo (oggetti di prova, equipaggiamento generato
+durante i test, un mostro che aveva vagato fuori dalla propria stanza),
+non contenuto mancante.
+
+### Tre trappole che il modulo disinnesca
+
+Chi dovesse ricostruire il mondo a mano incontrerebbe tre insidie, tutte
+documentate in `world/costruisci_mondo.py`:
+
+1. Esistono **tre funzioni diverse chiamate `popola_tutto()`**, in
+   `popola_mostri`, `popola_scenografia` e `popola_scenografia_arkham`,
+   e coprono cose diverse. Chiamarne una sola sembra aver fatto tutto.
+2. `popola_mostri.popola_tutto()` **non è idempotente**: rigenera
+   l'intera tabella di reset a ogni chiamata, aggiungendo una settantina
+   di mostri per volta. Per ripopolare un mondo esistente si usa
+   `repop.popola_tutte_le_zone_mancanti()`, che crea solo ciò che manca.
+3. I popolatori di NPC di ambientazione saltano una stanza se contiene
+   già **un NPC qualsiasi** — e i mostri sono NPC. Vanno quindi eseguiti
+   *prima* dei mostri, altrimenti gli NPC di ambientazione delle stanze
+   contese non nascono affatto.
+
+L'ordine delle fasi tiene conto anche delle dipendenze fra zone: gli hub
+newbie per primi, le Dreamlands dopo Ulthar e Zoog che collegano,
+l'aggancio degli hub al mondo per ultimo. Una seconda passata sulla
+topologia chiude eventuali collegamenti rimandati; se crea qualcosa,
+significa che l'ordine va rivisto, e il comando lo segnala.

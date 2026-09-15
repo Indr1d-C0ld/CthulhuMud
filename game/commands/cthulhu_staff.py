@@ -501,3 +501,56 @@ class CmdPermapk(MuxCommand):
         ServerConfig.objects.conf("permapk", attivo)
         stato = "|rATTIVA|n" if attivo else "disattivata"
         self.caller.msg(f"Modalita' PERMAPK ora {stato} in tutto il gioco.")
+
+
+class CmdCostruisciMondo(MuxCommand):
+    """
+    costruisce o completa il mondo di gioco dal codice
+
+    Uso:
+      costruiscimondo           esegue tutte le fasi di costruzione
+      costruiscimondo/elenco    mostra le fasi senza eseguirle
+
+    Chiama, nell'ordine giusto, tutte le funzioni di costruzione e
+    popolamento sparse in world/ (vedi world/costruisci_mondo.py).
+
+    E' idempotente: su un mondo gia' costruito non crea nulla e serve
+    quindi anche come verifica, perche' qualunque oggetto creato indica
+    qualcosa che nel mondo manca rispetto a cio' che il codice prevede.
+
+    Su un database vuoto ricostruisce il mondo da zero: e' questo il
+    motivo per cui esiste.
+    """
+    key = "costruiscimondo"
+    locks = "cmd:perm(Developer)"
+    help_category = "Staff"
+    switch_options = ("elenco",)
+
+    def func(self):
+        from world.costruisci_mondo import costruisci_mondo, elenca_fasi
+
+        if "elenco" in self.switches:
+            self.caller.msg("\n".join(elenca_fasi()))
+            return
+
+        self.caller.msg("Costruzione del mondo in corso...")
+        esito = costruisci_mondo(verboso=False)
+
+        righe = [f"Oggetti: {esito['oggetti_prima']} -> {esito['oggetti_dopo']} "
+                 f"(creati: {esito['creati']})"]
+        for etichetta, creati, descrizione in esito["fasi"]:
+            if creati:
+                righe.append(f"  |g+{creati}|n  {etichetta}  -  {descrizione}")
+        if esito["recuperi_seconda_passata"]:
+            righe.append(f"  |yATTENZIONE|n: {esito['recuperi_seconda_passata']} oggetti "
+                         f"creati solo alla seconda passata: l'ordine delle fasi "
+                         f"in world/costruisci_mondo.py va rivisto.")
+        if esito["errori"]:
+            righe.append(f"|r{len(esito['errori'])} fasi in errore:|n")
+            for etichetta, err in esito["errori"]:
+                righe.append(f"  |r{etichetta}|n: {err}")
+        else:
+            righe.append("Nessun errore.")
+        if not esito["creati"]:
+            righe.append("Nulla da creare: il mondo e' allineato al codice.")
+        self.caller.msg("\n".join(righe))

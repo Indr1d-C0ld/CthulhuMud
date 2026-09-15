@@ -106,6 +106,22 @@ def esegui_reset_zona(zona):
     return creati
 
 
+def popola_tutte_le_zone_mancanti():
+    """Esegue esegui_reset_zona() su tutte le zone note, ignorando i
+    tempi di attesa e la presenza di giocatori.
+
+    Serve alla costruzione del mondo (world/costruisci_mondo.py), non al
+    tick periodico: su un mondo vuoto popola tutte e quattro le zone, su
+    un mondo gia' popolato non crea nulla.
+
+    E' l'alternativa sicura a popola_mostri.popola_tutto(), che invece
+    genera la tabella di reset per intero a ogni chiamata e quindi
+    accumula mostri se la si rilancia su un mondo gia' popolato.
+
+    Ritorna {zona: [mostri_creati]}."""
+    return {zona: esegui_reset_zona(zona) for zona in zone()}
+
+
 def controlla_e_ripopola_tutte_le_zone(ultimo_reset):
     """Chiamata dal tick di RepopScript (typeclasses/scripts.py).
     ultimo_reset e' un dict persistente {zona: timestamp_ultimo_reset}

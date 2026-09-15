@@ -99,7 +99,7 @@ from commands.cthulhu_mosse_speciali import (
 from commands.cthulhu_staff import (
     CmdHolylight, CmdRestore, CmdAdvance, CmdSlay, CmdFreeze, CmdPeace,
     CmdWizinvis, CmdCloak, CmdWizlock, CmdNewlock, CmdSwitch, CmdIncarnate,
-    CmdGoto, CmdBamfin, CmdBamfout, CmdPermapk,
+    CmdGoto, CmdBamfin, CmdBamfout, CmdPermapk, CmdCostruisciMondo,
 )
 
 
@@ -211,6 +211,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdBamfin)
         self.add(CmdBamfout)
         self.add(CmdPermapk)
+        self.add(CmdCostruisciMondo)
         self.add(CmdDeposit)
         self.add(CmdWithdraw)
         self.add(CmdBalance)

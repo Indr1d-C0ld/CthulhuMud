@@ -184,7 +184,16 @@ def popola_dreamlands():
 
 
 def popola_tutto():
-    """Popola tutte e 4 le zone in un colpo solo."""
+    """Popola tutte e 4 le zone in un colpo solo.
+
+    ATTENZIONE - NON E' IDEMPOTENTE. Genera l'intera TABELLA_RESET a
+    ogni chiamata senza controllare cosa c'e' gia': rilanciarla su un
+    mondo popolato aggiunge altri ~70 mostri, e cosi' a ogni giro.
+    E' il primitivo di popolamento "da zero", non un reset.
+
+    Per ripopolare un mondo gia' esistente usa invece
+    world/repop.py:popola_tutte_le_zone_mancanti(), che crea solo le
+    voci effettivamente mancanti."""
     risultati = {}
     for nome, funzione in (
         ("arkham", popola_arkham),
