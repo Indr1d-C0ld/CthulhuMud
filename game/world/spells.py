@@ -1126,7 +1126,7 @@ SPELLS = {
                        "distrugga l'arma nel tentativo. Nota tecnica: essendo una ricerca "
                        "globale (l'arma puo' trovarsi ovunque nel mondo), Evennia richiede "
                        "di scriverne il nome ESATTO e completo, articolo incluso "
-                       "(es. 'un pugnale forgiato da randolph').",
+                       "(es. 'un pugnale forgiato da Carter').",
     },
     "consistence": {
         "nome": "Consistenza", "skill_richiesta": "taumathurgy", "costo_mana": 15,
