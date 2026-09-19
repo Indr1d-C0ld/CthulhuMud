@@ -2,6 +2,14 @@
 Lancio degli incantesimi (M5). Vedi world/spells.py per il registro e la
 nota sulle formule non documentate dal sito originale.
 
+Nota sugli script di stato: quando un incantesimo curativo annulla una
+condizione (veleno, malattia, maledizione, invisibilita'...) il relativo
+script va rimosso con `.delete()` e MAI con `.stop()`. In Evennia 6.1
+`.stop()` disattiva lo script ma ne lascia la riga nel database: prima
+dell'audit qui c'erano nove `.stop()`, e ogni cura lanciata in partita
+lasciava dietro di se' una riga morta. Stessa regola gia' documentata in
+world/effetti.py e world/sottorazze.py.
+
 Requisiti per lanciare (Dossier Miskatonic §4, Newbie School):
   1. skill "spell_casting" > 0
   2. skill specifica dell'incantesimo > 0
@@ -110,14 +118,26 @@ def tiro_salvezza(bersaglio, caster, spell_id):
     Autodisciplina (gia' descritta in world/skills.py come fonte di
     "resistenza alla magia", mai agganciata a nulla finora) piu' meta'
     della Saggezza; il lanciatore usa la stessa media di skill che decide
-    il successo del lancio. True se il bersaglio resiste."""
+    il successo del lancio. True se il bersaglio resiste.
+
+    Difetto corretto in audit: qui si leggeva `bersaglio.db.wis`, un
+    attributo che nessuno scrive mai - gli attributi del personaggio
+    stanno in `attributes.get("stat_<nome>", category="cthulhu")` e si
+    leggono con valore_attributo(). Il risultato era che la Saggezza
+    valeva sempre 10 per chiunque: un personaggio con Saggezza 18
+    resisteva alla magia esattamente come uno con Saggezza 3, e la meta'
+    "Saggezza" del tiro salvezza descritta qui sopra non esisteva.
+    Il ripiego a 10 resta per i bersagli privi del metodo (gli NPC non
+    hanno attributi tirati), come gia' si fa in typeclasses/living.py."""
     spell = SPELLS[spell_id]
     rating_lanciatore = (caster.skill_rating("spell_casting") + caster.skill_rating(spell["skill_richiesta"])) / 2
     tiro_lanciatore = random.uniform(0, 100) + rating_lanciatore
+    saggezza = (bersaglio.valore_attributo("wis")
+                if hasattr(bersaglio, "valore_attributo") else 10)
     tiro_bersaglio = (
         random.uniform(0, 100)
         + bersaglio.skill_rating("self_discipline")
-        + (bersaglio.db.wis or 10) / 2
+        + saggezza / 2
     )
     return tiro_bersaglio > tiro_lanciatore
 
@@ -572,7 +592,7 @@ def _effetto_age(caster, bersaglio, testo):
 def _effetto_youth(caster, bersaglio, testo):
     rimuovi_stato(bersaglio, "invecchiato")  # per simmetria, se mai impostato altrove
     for script in bersaglio.scripts.get("buff_mod_temp_con"):
-        script.stop()
+        script.delete()
     bersaglio.db.mod_temp_con = 0
     _cura(caster, bersaglio, random.randint(10, 20), "Giovinezza")
     caster.location.msg_contents(magia(f"{bersaglio.key} ringiovanisce a vista d'occhio."))
@@ -683,7 +703,7 @@ def _effetto_remove_curse(caster, bersaglio, testo):
         return
     rimuovi_stato(bersaglio, "maledetto")
     for script in bersaglio.scripts.get("buff_bonus_colpire"):
-        script.stop()
+        script.delete()
     caster.location.msg_contents(magia(f"La maledizione su {bersaglio.key} viene spezzata."))
 
 
@@ -763,7 +783,7 @@ def _effetto_cure_poison(caster, bersaglio, testo):
         caster.msg(f"{bersaglio.key} non e' avvelenato/a.")
         return
     for script in bersaglio.scripts.get("periodico_avvelenato"):
-        script.stop()
+        script.delete()
     rimuovi_stato(bersaglio, "avvelenato")
     caster.location.msg_contents(magia(f"Il veleno abbandona il corpo di {bersaglio.key}."))
 
@@ -782,7 +802,7 @@ def _effetto_cure_disease(caster, bersaglio, testo):
         caster.msg(f"{bersaglio.key} non e' malato/a.")
         return
     for script in bersaglio.scripts.get("periodico_malato"):
-        script.stop()
+        script.delete()
     rimuovi_stato(bersaglio, "malato")
     caster.location.msg_contents(magia(f"La malattia abbandona il corpo di {bersaglio.key}."))
 
@@ -803,9 +823,9 @@ def _dissolvi_tutto(bersaglio):
         setattr(bersaglio.db, f"mod_temp_{attr}", 0)
     for stato in list((bersaglio.db.stati or {}).keys()):
         for script in bersaglio.scripts.get(f"stato_{stato}"):
-            script.stop()
+            script.delete()
         for script in bersaglio.scripts.get(f"periodico_{stato}"):
-            script.stop()
+            script.delete()
     bersaglio.db.stati = {}
 
 
@@ -958,7 +978,7 @@ def _effetto_remove_invis(caster, bersaglio, testo):
         return
     bersaglio.db.invisibile = False
     for script in bersaglio.scripts.get("invis_scadenza"):
-        script.stop()
+        script.delete()
     caster.location.msg_contents(magia(f"{bersaglio.key} ridiventa visibile."))
 
 
@@ -1286,7 +1306,7 @@ def _effetto_slender_lines(caster, bersaglio, testo):
         return
     rimuovi_stato(bersaglio, "obeso")
     for script in bersaglio.scripts.get("buff_mod_temp_dex"):
-        script.stop()
+        script.delete()
     bersaglio.db.mod_temp_dex = 0
     caster.location.msg_contents(magia(f"{bersaglio.key} perde all'istante ogni traccia di grasso in eccesso."))
 
@@ -1326,7 +1346,7 @@ def _effetto_ghastly_sobriety(caster, bersaglio, testo):
     if ha_stato(bersaglio, "ubriaco"):
         rimuovi_stato(bersaglio, "ubriaco")
         for script in bersaglio.scripts.get("buff_bonus_colpire"):
-            script.stop()
+            script.delete()
         bersaglio.db.bonus_colpire = 0
     applica_buff_temporaneo(bersaglio, "bonus_colpire", -3, 120,
                              f"{bersaglio.key} smaltisce finalmente il mal di testa.")

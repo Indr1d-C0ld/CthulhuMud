@@ -78,7 +78,11 @@ class CmdDream(Command):
         percentuale_sanity = max(0, min(100, (sanity / sanity_max) * 100))
 
         rating_dreaming = caller.skill_rating("dreaming")
-        saggezza = caller.db.wis or 10
+        # Stesso difetto corretto in world/magic.py:tiro_salvezza: db.wis
+        # non viene mai scritto, la Saggezza si legge con valore_attributo()
+        # - prima valeva sempre 10 e non incideva su nulla.
+        saggezza = (caller.valore_attributo("wis")
+                    if hasattr(caller, "valore_attributo") else 10)
 
         # helps/dreaming.txt: la skill (aiutata dalla Saggezza) rende il
         # viaggio piu' facile; la Sanity bassa lo facilita comunque un

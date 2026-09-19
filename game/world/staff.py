@@ -33,7 +33,11 @@ def restaura(personaggio):
     (world/effetti.py:applica_danno_periodico, script
     "periodico_<stato>") - rimuovere solo la voce da db.stati non
     basta, lo script continuerebbe a infliggere danno ai tick
-    successivi: va anche fermato esplicitamente."""
+    successivi: va anche fermato esplicitamente.
+
+    Si usa `.delete()` e non `.stop()`: in Evennia 6.1 `.stop()` disattiva
+    lo script ma ne lascia la riga nel database, e a ogni RESTORE si
+    accumulerebbero righe morte (vedi la nota in world/effetti.py)."""
     personaggio.db.hp = personaggio.db.hp_max
     personaggio.db.mana = personaggio.db.mana_max
     personaggio.db.move = personaggio.db.move_max
@@ -41,9 +45,9 @@ def restaura(personaggio):
     for stato in ATTRIBUTI_CURA:
         stati.pop(stato, None)
         for script in personaggio.scripts.get(f"periodico_{stato}"):
-            script.stop()
+            script.delete()
         for script in personaggio.scripts.get(f"stato_{stato}"):
-            script.stop()
+            script.delete()
     personaggio.db.stati = stati
 
 

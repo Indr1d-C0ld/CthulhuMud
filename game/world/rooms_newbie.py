@@ -291,3 +291,81 @@ def collega_hub_al_mondo():
                 )
                 create_list.append(f"{ancora.key} -[{nome_ritorno}]-> {stanza.key}")
     return create_list
+
+
+# ---------------------------------------------------------------------
+# Rete di sicurezza: nessuna stanza d'arrivo automatico senza uscite
+# ---------------------------------------------------------------------
+#
+# L'audit di cui sopra corresse le stanze di RECALL, ma non le altre due:
+# a Dylath-Leen respawn (#16) e obitorio (#17) sono rimasti senza alcuna
+# uscita, perche' quell'hub - a differenza degli altri sette - non ha un
+# modulo d'area che glieli colleghi. Le conseguenze erano due, entrambe
+# invisibili finche' non si muore davvero in quel punto del mondo:
+#
+#   - world/combat.py teletrasporta chi muore nella propria respawn_room:
+#     un personaggio di Dylath-Leen ci restava chiuso dentro per sempre,
+#     perche' non esiste un comando RECALL e l'unica via d'uscita sarebbe
+#     l'incantesimo Parola di Richiamo, che un neofita appena morto non
+#     conosce e non avrebbe comunque il mana per lanciare;
+#   - il cadavere va nella morgue_room: irraggiungibile significa che
+#     tutto cio' che il personaggio portava con se' spariva dal gioco.
+#
+# Invece di una toppa per il solo Dylath-Leen, questa funzione afferma
+# l'invariante generale: nessuna stanza in cui il gioco puo' spedire un
+# giocatore o il suo cadavere deve essere priva di uscite. Vale anche per
+# gli hub che verranno aggiunti in futuro.
+
+# Nome dell'uscita di ritorno verso il recall, per ruolo. "fuori" e' la
+# convenzione gia' usata dagli altri hub per uscire da infermerie e
+# obitori.
+_USCITA_VERSO_RECALL = "fuori"
+_USCITA_VERSO_RUOLO = {"respawn": "infermeria", "morgue": "obitorio"}
+
+
+def collega_ruoli_isolati_agli_hub():
+    """Da un'uscita alle stanze di respawn/obitorio rimaste isolate.
+
+    Agisce SOLO sulle stanze che non hanno alcuna uscita: i sette hub gia'
+    collegati dai loro moduli d'area non vengono toccati, cosi' non si
+    rischia di creare uscite omonime accanto a quelle esistenti.
+
+    Idempotente. Ritorna l'elenco delle uscite create."""
+    from evennia.objects.models import ObjectDB
+
+    create_list = []
+    for hub_id in HUBS:
+        recall = stanza_per_ruolo(hub_id, "recall")
+        if not recall:
+            continue
+        for ruolo in ("respawn", "morgue"):
+            stanza = stanza_per_ruolo(hub_id, ruolo)
+            # Diversi hub usano la stessa stanza per recall e respawn:
+            # in quel caso non c'e' nulla da collegare.
+            if not stanza or stanza.id == recall.id:
+                continue
+            if list(stanza.exits):
+                continue
+
+            create.create_object(
+                "typeclasses.exits.Exit", key=_USCITA_VERSO_RECALL,
+                location=stanza, destination=recall,
+            )
+            create_list.append(f"{stanza.key} -[{_USCITA_VERSO_RECALL}]-> {recall.key}")
+
+            # Uscita di andata, perche' il cadavere all'obitorio dev'essere
+            # anche raggiungibile, non solo abbandonabile. Se il nome e'
+            # gia' occupato nella stanza di recall si rinuncia: due uscite
+            # omonime nella stessa stanza si scambiano per sbaglio, ed e'
+            # un danno peggiore di quello che si sta riparando.
+            nome_andata = _USCITA_VERSO_RUOLO[ruolo]
+            if any(e.key == nome_andata for e in recall.exits):
+                continue
+            if any(e.destination and e.destination.id == stanza.id for e in recall.exits):
+                continue
+            create.create_object(
+                "typeclasses.exits.Exit", key=nome_andata,
+                location=recall, destination=stanza,
+            )
+            create_list.append(f"{recall.key} -[{nome_andata}]-> {stanza.key}")
+    return create_list

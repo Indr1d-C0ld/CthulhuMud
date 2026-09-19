@@ -97,6 +97,11 @@ TOPOLOGIA = [
      "4 aree non umane (Y'ha-nthlei, Mi-Go, Yuggoth, Biblioteca)"),
     ("world.rooms_newbie", "collega_hub_al_mondo",
      "aggancio degli hub al mondo costruito"),
+    # Rete di sicurezza: va per ultima, quando ogni modulo d'area ha gia'
+    # collegato cio' che gli compete, cosi' interviene solo su cio' che e'
+    # rimasto davvero isolato.
+    ("world.rooms_newbie", "collega_ruoli_isolati_agli_hub",
+     "uscite per le stanze di respawn/obitorio rimaste isolate"),
 ]
 
 # Fase 2 - popolamento: NPC, mostri, scenografia, negozi, oggetti.

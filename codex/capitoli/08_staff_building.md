@@ -219,3 +219,73 @@ newbie per primi, le Dreamlands dopo Ulthar e Zoog che collegano,
 l'aggancio degli hub al mondo per ultimo. Una seconda passata sulla
 topologia chiude eventuali collegamenti rimandati; se crea qualcosa,
 significa che l'ordine va rivisto, e il comando lo segnala.
+
+## Audit approfondito: tre difetti silenziosi
+
+Un audit successivo alla ricostruzione del mondo ha cercato
+sistematicamente le classi di difetto che il porting aveva gia' incontrato
+in passato. Ne sono emersi tre, tutti invisibili nell'uso normale: nessuno
+produceva un messaggio d'errore, e ciascuno richiedeva di trovarsi in una
+situazione precisa per accorgersene.
+
+### La trappola del Riformatorio di Dylath-Leen
+
+Sette hub di nascita su otto davano almeno un'uscita alle proprie stanze
+di respawn e obitorio. Il Riformatorio di Dylath-Leen no: non avendo un
+modulo d'area che glieli collegasse, l'Infermeria e la Camera Mortuaria
+erano rimaste **senza alcuna uscita**. Le conseguenze erano due:
+
+- chi moriva con una professione di Dylath-Leen veniva teletrasportato
+  nell'Infermeria e vi restava chiuso per sempre — non esiste un comando
+  RECALL, e l'unica via d'uscita sarebbe stata Parola di Richiamo, che un
+  neofita appena morto non conosce e non avrebbe il mana per lanciare;
+- il cadavere finiva nella Camera Mortuaria, altrettanto irraggiungibile:
+  tutto cio' che il personaggio portava con se' spariva dal gioco.
+
+La correzione non e' una toppa per Dylath-Leen ma un invariante generale
+(`world/rooms_newbie.py:collega_ruoli_isolati_agli_hub`): nessuna stanza in
+cui il gioco puo' spedire un giocatore o il suo cadavere deve essere priva
+di uscite. La funzione interviene solo dove non c'e' *nessuna* uscita,
+cosi' non disturba gli hub gia' collegati, e vale anche per gli hub che
+verranno aggiunti in futuro.
+
+### La Saggezza che non contava nulla
+
+Il tiro salvezza contro gli incantesimi e' descritto come "Autodisciplina
+piu' meta' della Saggezza". Leggeva pero' `db.wis`, un attributo che
+nessuno scrive mai: gli attributi del personaggio stanno in
+`attributes.get("stat_<nome>", category="cthulhu")` e si leggono con
+`valore_attributo()`. Il ripiego faceva si' che la Saggezza valesse
+**sempre 10 per chiunque**: un personaggio con Saggezza 18 resisteva alla
+magia esattamente come uno con Saggezza 3. Lo stesso errore era presente
+nel viaggio onirico (`commands/cthulhu_dream.py`).
+
+Dopo la correzione, misurato dal vivo su 600 tiri per parte: 414
+resistenze con Saggezza 18 contro 382 con Saggezza 3.
+
+### Nove cure che lasciavano righe morte
+
+La regola "usa `.delete()` e MAI `.stop()`" — in Evennia 6.1 `.stop()`
+disattiva lo script ma ne lascia la riga nel database — era gia'
+documentata e applicata in `world/effetti.py`, `world/sottorazze.py` e
+`typeclasses/living.py`. In `world/magic.py` era invece rimasta
+disattesa in nove punti, e in `world/staff.py` in due: ogni Cura Veleno,
+Cura Malattia, Spezza Maledizione, Giovinezza, Dissolvi Magie e ogni
+RESTORE da staff lasciava dietro di se' una riga inerte, per sempre.
+
+### Cosa NON era un difetto
+
+Vale la pena registrare anche i falsi allarmi, perche' torneranno a
+sembrare difetti a chi rileggera' il codice:
+
+- le skill senza `descrizione` sono quelle che sono anche incantesimi: il
+  testo arriva da `SPELLS` tramite `descrizione_skill()`;
+- `db.negozio` **e'** il listino del mercante, non un flag, ed Evennia lo
+  restituisce come `_SaverList`, che non e' una sottoclasse di `list`;
+- `NOFOLLOW` non smette di seguire qualcuno: rifiuta nuovi seguaci. Per
+  smettere si usa `FOLLOW ME`, come nella convenzione DikuMUD;
+- l'esperienza da uccisione e' subordinata a `active_profession`, quindi
+  un personaggio creato a mano senza professione non ne guadagna: e' una
+  guardia voluta;
+- Limbo resta senza uscite e irraggiungibile: e' la stanza di default di
+  Evennia, deliberatamente fuori dal mondo di gioco.
