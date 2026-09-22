@@ -384,6 +384,20 @@ class Character(LivingMixin, ObjectParent, DefaultCharacter):
             # dentro le Dreamlands, non solo al primo ingresso.
             self.db.ultimo_sogno = self.location
 
+        # GMCP: dice al client dove siamo finiti, cosi' Mudlet puo'
+        # disegnare la mappa (world/gmcp.py). Silenzioso per i client che
+        # non lo supportano, e non puo' impedire lo spostamento.
+        from world.gmcp import invia_stanza, invia_vitali
+        invia_stanza(self)
+        invia_vitali(self)
+
+    def at_post_puppet(self, **kwargs):
+        """Al login manda subito i dati GMCP: senza questo il client
+        resterebbe senza mappa ne' barre fino al primo spostamento."""
+        super().at_post_puppet(**kwargs)
+        from world.gmcp import invia_tutto
+        invia_tutto(self)
+
     def costo_train_attributo(self, attr):
         """Il costo sale di 1 train ogni volta che alleni lo STESSO
         attributo (1a volta 1 train, 2a volta 2, 3a volta 3, ecc.) -

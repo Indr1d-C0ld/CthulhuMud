@@ -234,4 +234,10 @@ class LivingMixin:
             from world.magic import PROBABILITA_INTERRUZIONE_COMBATTIMENTO, interrompi_lancio
             if random.uniform(0, 100) <= PROBABILITA_INTERRUZIONE_COMBATTIMENTO:
                 interrompi_lancio(self, "Il colpo subito interrompe il tuo incantesimo!")
+        # GMCP: aggiorna le barre di stato del client (world/gmcp.py).
+        # Sta qui e non nel ciclo di combattimento perche' gli HP calano
+        # anche fuori dal combattimento (veleno, peste, cadute).
+        if quantita:
+            from world.gmcp import invia_vitali
+            invia_vitali(self)
         return self.db.hp <= 0

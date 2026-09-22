@@ -12,6 +12,7 @@ sono utilizzabili da chi ha ancora una professione newbie attiva.
 from evennia.commands.default.muxcommand import MuxCommand
 
 from world.socials import SOCIALS, esegui_social
+from world.socials_italiano import ALIAS_SOCIAL
 
 
 def _e_newbie(personaggio):
@@ -24,8 +25,17 @@ def _crea_comando_social(social_id):
     """Fabbrica di comandi: una classe MuxCommand per ogni social."""
 
     class CmdSocialGenerico(MuxCommand):
-        __doc__ = f"emote sociale: {social_id}\n\nUso:\n  {social_id} [bersaglio]"
+        # Il nome italiano si aggiunge come alias: quello inglese resta
+        # valido. func() cerca in SOCIALS con self.key, che e' sempre la
+        # chiave inglese qualunque nome sia stato digitato.
+        _it = ALIAS_SOCIAL.get(social_id)
+        __doc__ = (
+            f"emote sociale: {_it or social_id}\n\nUso:\n  "
+            f"{_it or social_id} [bersaglio]"
+            + (f"\n  {social_id} [bersaglio]   (nome originale)" if _it else "")
+        )
         key = social_id
+        aliases = [_it] if _it else []
         locks = "cmd:all()"
 
         def func(self):

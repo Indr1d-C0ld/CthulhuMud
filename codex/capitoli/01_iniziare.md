@@ -44,3 +44,40 @@ Una volta in gioco, alcuni comandi ti torneranno utili da subito:
 - `quit` — esce dalla sessione corrente (o da tutte le sessioni, a seconda della sintassi usata).
 
 I capitoli successivi di questo Codex approfondiscono ogni sistema di gioco nel dettaglio: razze e sottorazze, professioni e progressione delle skill, magia, combattimento, economia, comunicazione e i luoghi del mondo.
+
+## I comandi si scrivono in italiano
+
+Ogni comando del gioco si può scrivere **sia in italiano sia in inglese**:
+sono lo stesso comando. `GUARDA` e `LOOK` fanno la stessa cosa, come
+`ABBRACCIA` e `HUG`, `ATTACCA` e `KILL`, `SCHEDA` e `SCORE`.
+
+I nomi inglesi vengono dalla fonte originale e restano validi per sempre:
+chi li conosce già non deve reimpararli, chi comincia adesso non deve
+impararli affatto.
+
+### Il prontuario
+
+Centosessanta comandi più duecento social sono tanti, e la pagina di
+aiuto di uno alla volta non aiuta a farsene un'idea d'insieme. Per quello
+c'è il prontuario:
+
+| comando | cosa mostra |
+|---|---|
+| `comandi` | le categorie disponibili |
+| `comandi <categoria>` | tutti i comandi di quella categoria, con descrizione |
+| `comandi tutto` | l'elenco completo |
+| `comandi cerca <parola>` | cerca fra nomi e descrizioni |
+
+Per ogni comando il prontuario mostra il nome italiano, quello inglese
+fra parentesi e una riga di descrizione. `PRONTUARIO` funziona come
+sinonimo di `COMANDI`.
+
+Resta valido `HELP <nome>` per l'aiuto completo di un singolo comando: il
+prontuario dà la mappa, HELP dà il dettaglio.
+
+### I social
+
+I duecentoquattro social hanno anch'essi un nome italiano: `SORRIDI`,
+`INCHINATI`, `PERNACCHIA`, `SBADIGLIA`, `ABBRACCIA`. Non compaiono nel
+prontuario — sarebbero più numerosi di tutto il resto messo insieme — e
+si consultano con `HELP`.

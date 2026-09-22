@@ -289,3 +289,57 @@ sembrare difetti a chi rileggera' il codice:
   guardia voluta;
 - Limbo resta senza uscite e irraggiungibile: e' la stanza di default di
   Evennia, deliberatamente fuori dal mondo di gioco.
+
+## Lo strato italiano dei comandi, e il rischio che nasconde
+
+I nomi italiani dei comandi stanno in due tabelle:
+`world/comandi_italiano.py` (127 alias per 163 comandi di gioco) e
+`world/socials_italiano.py` (204, uno per social). Gli alias vengono
+applicati a fine `at_cmdset_creation()`, quando tutti i comandi sono già
+stati aggiunti.
+
+Non basta appendere a `cmd.aliases`: Evennia costruisce da chiave e alias
+due strutture di ricerca (`_matchset` e `_keyaliases`) al momento della
+definizione della classe, ed è su quelle che avviene la corrispondenza.
+Per questo `applica_alias_italiani()` richiama `_init_command()` dopo
+avere aggiunto i nomi. Senza quel passaggio gli alias comparirebbero
+nell'elenco e non verrebbero mai riconosciuti — un guasto che sembra
+funzionare finché non lo si prova davvero.
+
+### Il rischio: un'uscita vince sempre su un comando
+
+In Evennia il cmdset di un'uscita ha priorità **101**, quello del
+personaggio **0**. Un alias che si chiami come un'uscita del mondo viene
+quindi oscurato in ogni stanza che ha quell'uscita — e in silenzio,
+senza alcun messaggio d'errore.
+
+Non è teoria: il primo giro di traduzione proponeva `taglie` per BOUNTY e
+`missione` per MISSION, e sono esattamente i nomi di due uscite (verso
+l'Ufficio Taglie nel Riformatorio di Dylath-Leen, e su Via Federal Nord).
+Entrambi avrebbero rotto il comando senza dirlo. Sono diventati
+`cacciataglie` e `missioni`.
+
+Per questo esiste `verifica_collisioni()`, che confronta tutti i 331
+alias con i nomi delle uscite realmente presenti nel mondo, con i nomi
+già occupati nei cmdset e fra loro. L'audit la esegue: se un domani
+qualcuno costruisce un'uscita chiamata `guarda`, il controllo lo segnala
+prima che diventi un difetto.
+
+## Dati GMCP per i client grafici
+
+Il server manda due pacchetti fuori banda (`world/gmcp.py`):
+
+- `Room.Info` a ogni cambio di stanza — numero, nome, area e uscite;
+- `Char.Vitals` al login e a ogni variazione di vita — HP, mana,
+  movimento e sanità mentale.
+
+`session.msg(room_info=((), dati))` diventa il pacchetto GMCP `Room.Info`
+da solo: Evennia trasforma gli underscore in punti e mette le iniziali
+maiuscole. Non serve alcuna modifica a Evennia, basta scegliere il nome
+giusto per l'outputfunc.
+
+Le uscite vengono mandate **divise in due campi**, `exits` per quelle
+cardinali e `specials` per quelle con nome proprio, perché nel nostro
+mondo il 54% è del secondo tipo e un client non ha modo di distinguerle
+da solo. Il pacchetto Mudlet in `client/mudlet/` dispone le prime sulla
+griglia e tratta le seconde come collegamenti speciali.

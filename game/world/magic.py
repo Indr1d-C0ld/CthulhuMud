@@ -2102,7 +2102,8 @@ def _effetto_stun_breath(caster, bersaglio, testo):
 # -- Via dell'Evocatore --
 
 def _effetto_call_pet(caster, bersaglio, testo):
-    seguaci = [s for s in (caster.db.seguaci or []) if s.pk]
+    # un seguace cancellato diventa None: vedi world/seguaci.py.
+    seguaci = [s for s in (caster.db.seguaci or []) if s is not None and s.pk]
     caster.db.seguaci = seguaci
     lontani = [s for s in seguaci if s.location != caster.location]
     if not lontani:

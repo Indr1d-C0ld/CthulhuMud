@@ -96,6 +96,7 @@ from commands.cthulhu_illuminazione import CmdLight, CmdExtinguish
 from commands.cthulhu_mosse_speciali import (
     CmdKick, CmdBash, CmdTrip, CmdDisarm, CmdDirtKicking, CmdBackstab,
 )
+from commands.cthulhu_prontuario import CmdComandi
 from commands.cthulhu_staff import (
     CmdHolylight, CmdRestore, CmdAdvance, CmdSlay, CmdFreeze, CmdPeace,
     CmdWizinvis, CmdCloak, CmdWizlock, CmdNewlock, CmdSwitch, CmdIncarnate,
@@ -308,6 +309,14 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdPerm)
         self.add(CmdWall)
         self.add(CmdForce)
+        self.add(CmdComandi)
+
+        # Nomi italiani dei comandi (world/comandi_italiano.py). Va per
+        # ultimo, quando tutti i comandi sono stati aggiunti: la funzione
+        # scorre il cmdset e aggiunge a ciascuno i propri alias. I nomi
+        # inglesi restano validi - un alias si affianca, non sostituisce.
+        from world.comandi_italiano import applica_alias_italiani
+        applica_alias_italiani(self)
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):

@@ -63,7 +63,8 @@ def membri_gruppo(personaggio):
     leader = _leader_di(personaggio)
     if not leader:
         return []
-    membri = [m for m in (leader.db.membri_gruppo or []) if m.pk]
+    # un membro cancellato diventa None: vedi sposta_seguaci_giocatori.
+    membri = [m for m in (leader.db.membri_gruppo or []) if m is not None and m.pk]
     return [leader] + membri
 
 
@@ -83,8 +84,17 @@ def bonus_gruppo_colpire(personaggio):
 
 def sposta_seguaci_giocatori(personaggio):
     """Da chiamare quando personaggio cambia stanza: chi lo segue con
-    FOLLOW lo segue automaticamente."""
-    seguaci = [s for s in (personaggio.db.seguaci_giocatori or []) if s.pk]
+    FOLLOW lo segue automaticamente.
+
+    Il controllo "s is not None" non e' pignoleria: quando un oggetto
+    referenziato in un attributo viene cancellato, Evennia restituisce
+    None al suo posto, e il vecchio `s.pk` sollevava AttributeError.
+    Siccome questa funzione e' chiamata da at_post_move, l'eccezione
+    faceva fallire l'intero aggancio post-spostamento - il giocatore
+    vedeva "Spostamento non riuscito (at_post_move)" a ogni singolo
+    passo, per sempre, finche' qualcuno non ripuliva l'attributo a mano.
+    """
+    seguaci = [s for s in (personaggio.db.seguaci_giocatori or []) if s is not None and s.pk]
     for seguace in seguaci:
         if seguace.location != personaggio.location:
             seguace.move_to(personaggio.location, quiet=True, move_type="follow")

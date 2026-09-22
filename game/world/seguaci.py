@@ -111,7 +111,12 @@ def sposta_seguaci(personaggio):
     seguaci = personaggio.db.seguaci or []
     validi = []
     for seguace in seguaci:
-        if not seguace.pk:
+        # "is None" e non solo ".pk": un seguace cancellato (un animale
+        # addomesticato che muore, per esempio) diventa None nella lista,
+        # e il solo `.pk` sollevava AttributeError. Essendo questa
+        # funzione chiamata da at_post_move, bastava un seguace morto per
+        # rompere ogni spostamento successivo del padrone.
+        if seguace is None or not seguace.pk:
             continue
         validi.append(seguace)
         if seguace.location != personaggio.location and getattr(seguace, "vivo", True):
@@ -122,7 +127,9 @@ def sposta_seguaci(personaggio):
 
 def ordina(personaggio, testo):
     """ORDER <seguace> <comando> / ORDER ALL <comando>. Ritorna (ok, messaggio)."""
-    seguaci = [s for s in (personaggio.db.seguaci or []) if s.pk]
+    # vedi la nota in sposta_seguaci: un seguace cancellato diventa
+    # None nella lista, e il solo .pk solleverebbe AttributeError.
+    seguaci = [s for s in (personaggio.db.seguaci or []) if s is not None and s.pk]
     personaggio.db.seguaci = seguaci
     if not seguaci:
         return False, "Non hai nessun seguace."

@@ -1,0 +1,198 @@
+-- ---------------------------------------------------------------------
+-- CthulhuMUD Redux - mappatore automatico e barre di stato per Mudlet
+--
+-- Si appoggia ai pacchetti GMCP che il server manda (vedi
+-- game/world/gmcp.py):
+--
+--   Room.Info    {num, name, area, exits, specials}
+--   Char.Vitals  {hp, maxhp, mana, maxmana, mv, maxmv, sanity, maxsanity}
+--
+-- Perche' un mappatore su misura invece del Generic Mapper di Mudlet:
+-- nel mondo di CthulhuMUD il 54% delle uscite ha un nome proprio
+-- ("tribunale", "navata", "fuori") invece di una direzione cardinale.
+-- Il server le manda percio' in due campi separati - "exits" per quelle
+-- cardinali, "specials" per le altre - e questo script le tratta di
+-- conseguenza: le prime vanno sulla griglia, le seconde diventano
+-- collegamenti speciali cliccabili. Un mapper generico dovrebbe
+-- indovinare quale sia quale, e sbaglierebbe.
+-- ---------------------------------------------------------------------
+
+cthulhu = cthulhu or {}
+cthulhu.mapper = cthulhu.mapper or {}
+
+-- Da direzione GMCP a direzione Mudlet, con lo spostamento sulla griglia.
+cthulhu.mapper.direzioni = {
+  n    = {dir = "north",     dx =  0, dy =  1, dz =  0},
+  s    = {dir = "south",     dx =  0, dy = -1, dz =  0},
+  e    = {dir = "east",      dx =  1, dy =  0, dz =  0},
+  w    = {dir = "west",      dx = -1, dy =  0, dz =  0},
+  ne   = {dir = "northeast", dx =  1, dy =  1, dz =  0},
+  nw   = {dir = "northwest", dx = -1, dy =  1, dz =  0},
+  se   = {dir = "southeast", dx =  1, dy = -1, dz =  0},
+  sw   = {dir = "southwest", dx = -1, dy = -1, dz =  0},
+  up   = {dir = "up",        dx =  0, dy =  0, dz =  1},
+  down = {dir = "down",      dx =  0, dy =  0, dz = -1},
+  ["in"]  = {dir = "in",     dx =  0, dy =  0, dz =  0},
+  out  = {dir = "out",       dx =  0, dy =  0, dz =  0},
+}
+
+cthulhu.mapper.stanza_precedente = nil
+cthulhu.mapper.ultima_direzione = nil
+
+-- Ricorda l'ultimo comando digitato: serve a capire in che direzione ci
+-- si e' mossi, per posizionare una stanza nuova accanto a quella da cui
+-- si arriva. Senza questo, ogni stanza nuova finirebbe nell'origine.
+function cthulhu.mapper.ricordaComando(comando)
+  local c = string.lower(comando or "")
+  local abbreviazioni = {
+    n = "n", nord = "n", s = "s", sud = "s",
+    e = "e", est = "e", o = "w", ovest = "w",
+    ne = "ne", nordest = "ne", no = "nw", nordovest = "nw",
+    se = "se", sudest = "se", so = "sw", sudovest = "sw",
+    su = "up", alto = "up", giu = "down", basso = "down",
+    dentro = "in", fuori = "out",
+  }
+  cthulhu.mapper.ultima_direzione = abbreviazioni[c]
+  cthulhu.mapper.ultimo_comando = c
+end
+
+local function areaDi(nome)
+  local aree = getAreaTable() or {}
+  if aree[nome] then return aree[nome] end
+  local id = addAreaName(nome)
+  return id
+end
+
+local function coordinateNuove()
+  -- Posiziona la stanza accanto a quella da cui arriviamo, nella
+  -- direzione in cui ci siamo mossi. Se non lo sappiamo (teletrasporto,
+  -- login, uscita con nome proprio) la mettiamo di fianco, cosi' resta
+  -- visibile e trascinabile a mano invece di sovrapporsi all'origine.
+  local prec = cthulhu.mapper.stanza_precedente
+  if not prec or not roomExists(prec) then
+    return 0, 0, 0
+  end
+  local x, y, z = getRoomCoordinates(prec)
+  local d = cthulhu.mapper.direzioni[cthulhu.mapper.ultima_direzione or ""]
+  if d then
+    return x + d.dx, y + d.dy, z + d.dz
+  end
+  return x + 2, y, z
+end
+
+function cthulhu.mapper.aggiorna()
+  local info = gmcp.Room and gmcp.Room.Info
+  if not info or not info.num then return end
+  local id = tonumber(info.num)
+
+  local nuova = not roomExists(id)
+  if nuova then
+    addRoom(id)
+    local x, y, z = coordinateNuove()
+    setRoomCoordinates(id, x, y, z)
+  end
+
+  setRoomName(id, info.name or ("stanza " .. id))
+  if info.area then
+    setRoomArea(id, areaDi(info.area))
+  end
+
+  -- Uscite cardinali: vanno sulla griglia. Si collegano solo verso
+  -- stanze gia' note; quelle ancora inesplorate verranno collegate
+  -- quando ci si arrivera' davvero.
+  for sigla, destinazione in pairs(info.exits or {}) do
+    local d = cthulhu.mapper.direzioni[sigla]
+    local dest = tonumber(destinazione)
+    if d and dest and roomExists(dest) then
+      setExit(id, dest, d.dir)
+    end
+  end
+
+  -- Uscite con nome proprio: collegamenti speciali, cliccabili sulla
+  -- mappa e utilizzabili dallo speedwalk.
+  for nome, destinazione in pairs(info.specials or {}) do
+    local dest = tonumber(destinazione)
+    if dest and roomExists(dest) then
+      addSpecialExit(id, dest, nome)
+    end
+  end
+
+  cthulhu.mapper.stanza_precedente = id
+  cthulhu.mapper.ultima_direzione = nil
+  centerview(id)
+  updateMap()
+end
+
+-- ------------------------------------------------------- barre di stato
+cthulhu.stato = cthulhu.stato or {}
+
+function cthulhu.stato.crea()
+  if cthulhu.stato.contenitore then return end
+  cthulhu.stato.contenitore = Geyser.Container:new({
+    name = "cthulhu_stato",
+    x = "0%", y = "-4%", width = "100%", height = "4%",
+  })
+  cthulhu.stato.hp     = Geyser.Gauge:new({name = "cthulhu_hp",
+      x = "0%",  y = "0%", width = "24%", height = "100%"}, cthulhu.stato.contenitore)
+  cthulhu.stato.mana   = Geyser.Gauge:new({name = "cthulhu_mana",
+      x = "25%", y = "0%", width = "24%", height = "100%"}, cthulhu.stato.contenitore)
+  cthulhu.stato.mv     = Geyser.Gauge:new({name = "cthulhu_mv",
+      x = "50%", y = "0%", width = "24%", height = "100%"}, cthulhu.stato.contenitore)
+  cthulhu.stato.sanity = Geyser.Gauge:new({name = "cthulhu_sanity",
+      x = "75%", y = "0%", width = "24%", height = "100%"}, cthulhu.stato.contenitore)
+
+  cthulhu.stato.hp.front:setStyleSheet("background-color: rgb(140,20,20);")
+  cthulhu.stato.mana.front:setStyleSheet("background-color: rgb(40,60,150);")
+  cthulhu.stato.mv.front:setStyleSheet("background-color: rgb(40,120,50);")
+  -- verde tossico: la stessa famiglia cromatica che il gioco usa per il
+  -- Mythos e la magia (game/world/colori.py)
+  cthulhu.stato.sanity.front:setStyleSheet("background-color: rgb(90,160,40);")
+end
+
+function cthulhu.stato.aggiorna()
+  local v = gmcp.Char and gmcp.Char.Vitals
+  if not v then return end
+  cthulhu.stato.crea()
+  local function imposta(barra, valore, massimo, etichetta)
+    valore, massimo = tonumber(valore) or 0, tonumber(massimo) or 0
+    if massimo <= 0 then massimo = 1 end
+    barra:setValue(math.min(valore, massimo), massimo,
+                   string.format("<center>%s %d/%d</center>", etichetta, valore, massimo))
+  end
+  imposta(cthulhu.stato.hp,     v.hp,     v.maxhp,     "Vita")
+  imposta(cthulhu.stato.mana,   v.mana,   v.maxmana,   "Mana")
+  imposta(cthulhu.stato.mv,     v.mv,     v.maxmv,     "Movimento")
+  imposta(cthulhu.stato.sanity, v.sanity, v.maxsanity, "Sanita'")
+end
+
+-- ------------------------------------------------------------- avvio
+function cthulhu.avvia()
+  if not getMapperWindowInfo then
+    -- Mudlet vecchio: apre comunque il mappatore nella finestra di destra
+    createMapper(0, 0, 400, 400)
+  end
+  cecho("\n<green_yellow>CthulhuMUD Redux: mappatore e barre di stato attivi.<reset>\n")
+end
+
+
+-- ------------------------------------------------- smistamento eventi
+-- Mudlet chiama, per ogni evento registrato, la funzione globale che ha
+-- LO STESSO NOME dello script del pacchetto. Il nome dev'essere percio'
+-- un identificatore Lua valido, e deve combaciare con <name> nel file
+-- .xml: se i due divergono, lo script viene caricato senza errori e non
+-- fa semplicemente nulla - un guasto silenzioso.
+function cthulhuEvento(nome, ...)
+  if nome == "gmcp.Room.Info" then
+    cthulhu.mapper.aggiorna()
+  elseif nome == "gmcp.Char.Vitals" then
+    cthulhu.stato.aggiorna()
+  elseif nome == "sysDataSendRequest" then
+    -- ogni comando digitato passa di qui: ci serve per sapere in che
+    -- direzione ci si e' mossi quando arriva la stanza nuova
+    cthulhu.mapper.ricordaComando(...)
+  elseif nome == "sysConnectionEvent" then
+    cthulhu.mapper.stanza_precedente = nil
+    cthulhu.mapper.ultima_direzione = nil
+    cthulhu.avvia()
+  end
+end
