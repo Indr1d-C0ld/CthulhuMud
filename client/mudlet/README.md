@@ -1,7 +1,11 @@
 # Pacchetto Mudlet per CthulhuMUD Redux
 
 Mappatore automatico e barre di stato per il client [Mudlet](https://www.mudlet.org/).
-Provato con Mudlet 5.0.1.
+
+**Stato:** funzionante, confermato sul campo con Mudlet 5.0.1 su Debian.
+La logica del mappatore ha anche un banco di prova automatico (vedi in
+fondo), che però usa funzioni di Mudlet simulate: la prova che conta
+resta quella dentro il client vero.
 
 ## Installazione
 
