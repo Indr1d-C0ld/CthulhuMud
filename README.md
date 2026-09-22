@@ -11,10 +11,13 @@
 - [Cos'è questo progetto](#cosè-questo-progetto)
 - [Fedeltà alla fonte e note legali](#fedeltà-alla-fonte-e-note-legali)
 - [Caratteristiche principali](#caratteristiche-principali)
+- [Giocare in italiano](#giocare-in-italiano)
+- [Client grafici: mappa automatica per Mudlet](#client-grafici-mappa-automatica-per-mudlet)
 - [Il Codex](#il-codex)
 - [Requisiti](#requisiti)
 - [Installazione](#installazione)
 - [Primo avvio](#primo-avvio)
+- [Ricostruire il mondo dal codice](#ricostruire-il-mondo-dal-codice)
 - [Distribuzione (systemd)](#distribuzione-systemd)
 - [Struttura del progetto](#struttura-del-progetto)
 - [Licenza](#licenza)
@@ -52,10 +55,55 @@ Il corpus di ricerca usato durante lo sviluppo (una scansione della documentazio
 - Sistemi speciali: Yithian/Mindtransfer, bambole voodoo, Focus Crystal
 - Interfaccia colorata a tema lovecraftiano (ANSI/Xterm256): rosso cupo per il pericolo, verde spettrale per orrore/magia, viola per le Dreamlands, grigio/ciano per l'ambientazione
 - 204 comandi social/emote, canali OOC multipli, messaggistica privata
+- **Comandi in italiano**: ogni comando si può scrivere in italiano o in inglese, e un prontuario in gioco (`COMANDI`) li elenca tutti per categoria con descrizione
+- **Dati GMCP** per i client grafici: mappa automatica e barre di stato, con pacchetto Mudlet pronto in `client/mudlet/`
+- **Il mondo è codice**: un unico punto d'ingresso (`COSTRUISCIMONDO`) ricostruisce le 240 stanze e le 492 uscite da un database vuoto
+
+## Giocare in italiano
+
+Il gioco è interamente in italiano: stanze, oggetti, messaggi e pagine di
+aiuto. Anche i **comandi** hanno un nome italiano, che si affianca a quello
+inglese ereditato dalla fonte: `GUARDA` e `LOOK` sono lo stesso comando,
+come `ABBRACCIA` e `HUG` o `ATTACCA` e `KILL`. Nessun nome inglese è stato
+rimosso, quindi chi li conosce già non deve reimpararli.
+
+Centosessanta comandi più duecento social sono tanti, e la pagina di aiuto
+di uno alla volta non aiuta a farsene un'idea d'insieme. Per quello c'è il
+prontuario:
+
+| comando | cosa mostra |
+|---|---|
+| `comandi` | le categorie disponibili |
+| `comandi <categoria>` | i comandi di quella categoria, con descrizione |
+| `comandi tutto` | l'elenco completo |
+| `comandi cerca <parola>` | cerca fra nomi e descrizioni |
+
+Il prontuario non duplica nulla: legge nomi, descrizioni e categorie dai
+comandi stessi, quindi un comando aggiunto domani vi compare da solo.
+
+## Client grafici: mappa automatica per Mudlet
+
+Il server pubblica due pacchetti GMCP — la stanza corrente a ogni
+spostamento e i valori vitali a ogni variazione — che un client grafico può
+usare per disegnare la mappa e tenere delle barre di stato.
+
+In [`client/mudlet/`](client/mudlet/) c'è un pacchetto pronto per
+[Mudlet](https://www.mudlet.org/): mappatura automatica mentre cammini e
+quattro barre (Vita, Mana, Movimento, Sanità mentale). Istruzioni in
+[`client/mudlet/README.md`](client/mudlet/README.md).
+
+Un avvertimento onesto sulla resa: poco più della metà delle uscite del
+mondo ha un nome proprio (`tribunale`, `navata`, `fuori`) invece di una
+direzione cardinale — è una caratteristica del MUD originale. Mudlet sa
+disporre sulla griglia solo le direzioni cardinali, quindi il server manda
+le uscite divise in due gruppi e il pacchetto tratta le altre come
+collegamenti speciali: cliccabili e utilizzabili per lo speedwalk, ma senza
+posizione geometrica. Le vie di Arkham e il relitto dello U-29 vengono
+ordinati, gli interni degli edifici pendono di lato.
 
 ## Il Codex
 
-[`codex/codex_cthulhumud.pdf`](codex/codex_cthulhumud.pdf) è il manuale di gioco completo: oltre 130 pagine che coprono ogni sistema (personaggio, magia, combattimento, economia, luoghi, comunicazione, strumenti di staff), con fonti citate e distinzione esplicita fonte/scelta di design. Rigenerabile da sorgente con `bash codex/build.sh` (richiede `pandoc` e `weasyprint`).
+[`codex/codex_cthulhumud.pdf`](codex/codex_cthulhumud.pdf) è il manuale di gioco completo: 140 pagine che coprono ogni sistema (personaggio, magia, combattimento, economia, luoghi, comunicazione, strumenti di staff), con fonti citate e distinzione esplicita fonte/scelta di design. Rigenerabile da sorgente con `bash codex/build.sh` (richiede `pandoc` e `weasyprint`).
 
 ## Requisiti
 
@@ -82,6 +130,26 @@ Alla prima esecuzione ti verrà chiesto di creare un superuser. Per connetterti 
 
 Il file `game/server/conf/secret_settings.py` (non incluso in questo repository, vedi `.gitignore`) può contenere segreti locali come le credenziali SMTP per la notifica email di nuove registrazioni — vedi i commenti in `game/server/conf/settings.py` per i placeholder e le istruzioni.
 
+## Ricostruire il mondo dal codice
+
+Il mondo non è un file di database da custodire: è codice. Il comando di
+staff `COSTRUISCIMONDO` esegue, nell'ordine giusto, tutte le fasi di
+costruzione e popolamento sparse in `game/world/`
+(vedi `game/world/costruisci_mondo.py`).
+
+È **idempotente**: su un mondo già costruito non crea nulla, il che lo
+rende anche uno strumento di verifica — qualunque oggetto creato segnala
+qualcosa che manca rispetto a ciò che il codice prevede.
+
+Il mondo è stato ricostruito per intero a partire da un database vuoto,
+ottenendo **240 stanze e 492 uscite identiche** a quelle in esercizio,
+senza errori.
+
+```
+costruiscimondo           esegue tutte le fasi
+costruiscimondo/elenco    mostra le fasi senza eseguirle
+```
+
 ## Distribuzione (systemd)
 
 `deploy/systemd/` contiene le unit systemd pronte per l'uso (avvio al boot + watchdog di restart automatico) e uno script di installazione: vedi `deploy/systemd/install.sh`.
@@ -91,6 +159,7 @@ Il file `game/server/conf/secret_settings.py` (non incluso in questo repository,
 ```
 game/       codice del porting (Evennia): typeclasses, comandi, logica di gioco (world/)
 codex/      sorgenti Markdown e PDF compilato del manuale di gioco
+client/     pacchetti per i client di gioco (mappa automatica per Mudlet)
 deploy/     unit systemd per l'esecuzione in produzione
 ```
 

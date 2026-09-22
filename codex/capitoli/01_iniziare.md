@@ -81,3 +81,46 @@ I duecentoquattro social hanno anch'essi un nome italiano: `SORRIDI`,
 `INCHINATI`, `PERNACCHIA`, `SBADIGLIA`, `ABBRACCIA`. Non compaiono nel
 prontuario — sarebbero più numerosi di tutto il resto messo insieme — e
 si consultano con `HELP`.
+
+## Giocare con un client grafico: la mappa automatica
+
+CthulhuMUD Redux si gioca benissimo con un semplice telnet, ma se usi
+[Mudlet](https://www.mudlet.org/) il server è in grado di disegnarti la
+mappa mentre cammini e di tenere quattro barre di stato sempre aggiornate.
+
+Il pacchetto da importare si trova in `client/mudlet/` nel repository.
+
+### Installazione
+
+1. In Mudlet, accendi il protocollo: **Settings → Protocols → Enable
+   GMCP**. Senza questo il pacchetto si installa ma non riceve nulla.
+2. **Toolbox → Package Manager → Install**, e scegli
+   `CthulhuMudRedux.xml`.
+3. Riconnettiti. Deve comparire la riga *"CthulhuMUD Redux: mappatore e
+   barre di stato attivi"*.
+4. Apri la finestra della mappa dal pulsante **Map**: in Mudlet 5 non si
+   apre da sola.
+
+### Cosa fa
+
+Il server manda fuori banda due pacchetti: la stanza corrente a ogni
+spostamento (numero, nome, area e uscite) e i valori vitali al collegamento
+e a ogni variazione. Il pacchetto li traduce in una mappa che si costruisce
+da sola e in quattro barre — Vita, Mana, Movimento e Sanità mentale.
+
+### Perché una parte della mappa resta storta
+
+Nel mondo di CthulhuMUD poco più della metà delle uscite ha un **nome
+proprio** (`tribunale`, `navata`, `fuori`) invece di una direzione
+cardinale, e solo 69 stanze su 239 hanno esclusivamente uscite cardinali.
+È una caratteristica del MUD originale, che questo porting ha conservato.
+
+Mudlet sa disporre sulla griglia solo le direzioni cardinali. Il server
+manda perciò le uscite **divise in due gruppi**, e il pacchetto le tratta
+di conseguenza: le cardinali vanno sulla griglia, quelle con nome proprio
+diventano collegamenti speciali — cliccabili e utilizzabili per lo
+speedwalk, ma senza una posizione geometrica.
+
+In pratica le vie di Arkham e il relitto dello U-29 vengono disegnati
+ordinatamente, mentre gli interni degli edifici pendono di lato. Le stanze
+si possono trascinare a mano dove si preferisce: Mudlet salva la posizione.
