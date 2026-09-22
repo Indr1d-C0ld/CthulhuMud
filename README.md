@@ -88,9 +88,15 @@ spostamento e i valori vitali a ogni variazione — che un client grafico può
 usare per disegnare la mappa e tenere delle barre di stato.
 
 In [`client/mudlet/`](client/mudlet/) c'è un pacchetto pronto per
-[Mudlet](https://www.mudlet.org/): mappatura automatica mentre cammini e
-quattro barre (Vita, Mana, Movimento, Sanità mentale). Istruzioni in
+[Mudlet](https://www.mudlet.org/): mappatura automatica mentre cammini,
+barre di stato (Vita, Mana, Movimento, Sanità mentale) e tre comandi —
+`mappa`, `mappadiag` per la diagnostica, `barre on|off`. Istruzioni in
 [`client/mudlet/README.md`](client/mudlet/README.md).
+
+Il pacchetto ha un proprio banco di prova (`prova_mapper.lua`), che rifà in
+Lua puro le funzioni di Mudlet e ci fa passare dentro pacchetti GMCP veri
+catturati dal server: verifica la logica del mappatore senza bisogno di
+avere Mudlet installato.
 
 Un avvertimento onesto sulla resa: poco più della metà delle uscite del
 mondo ha un nome proprio (`tribunale`, `navata`, `fuori`) invece di una

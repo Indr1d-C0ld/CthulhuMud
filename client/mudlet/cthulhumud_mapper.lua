@@ -15,29 +15,44 @@
 -- conseguenza: le prime vanno sulla griglia, le seconde diventano
 -- collegamenti speciali cliccabili. Un mapper generico dovrebbe
 -- indovinare quale sia quale, e sbaglierebbe.
+--
+-- COMANDI DISPONIBILI IN GIOCO
+--   mappa        apre/aggancia la finestra della mappa
+--   mappadiag    diagnostica: dice cosa arriva e cosa manca
+--   barre on|off mostra o nasconde le barre di stato in basso
 -- ---------------------------------------------------------------------
 
 cthulhu = cthulhu or {}
 cthulhu.mapper = cthulhu.mapper or {}
+cthulhu.ultimoErrore = nil
 
--- Da direzione GMCP a direzione Mudlet, con lo spostamento sulla griglia.
+-- Direzioni che Mudlet sa disporre sulla griglia.
+--
+-- ATTENZIONE alla forma del nome: setExit() accetta le sigle BREVI
+-- ("n", "ne", "up"...) e NON i nomi lunghi ("north", "northeast").
+-- La prima versione di questo script passava i nomi lunghi, e siccome
+-- setExit non solleva un errore ma restituisce false, la mappa restava
+-- vuota senza che nulla lo segnalasse. Le sigle qui sotto sono le stesse
+-- che il server manda in "exits", quindi non serve alcuna conversione:
+-- la tabella tiene solo lo spostamento sulla griglia.
 cthulhu.mapper.direzioni = {
-  n    = {dir = "north",     dx =  0, dy =  1, dz =  0},
-  s    = {dir = "south",     dx =  0, dy = -1, dz =  0},
-  e    = {dir = "east",      dx =  1, dy =  0, dz =  0},
-  w    = {dir = "west",      dx = -1, dy =  0, dz =  0},
-  ne   = {dir = "northeast", dx =  1, dy =  1, dz =  0},
-  nw   = {dir = "northwest", dx = -1, dy =  1, dz =  0},
-  se   = {dir = "southeast", dx =  1, dy = -1, dz =  0},
-  sw   = {dir = "southwest", dx = -1, dy = -1, dz =  0},
-  up   = {dir = "up",        dx =  0, dy =  0, dz =  1},
-  down = {dir = "down",      dx =  0, dy =  0, dz = -1},
-  ["in"]  = {dir = "in",     dx =  0, dy =  0, dz =  0},
-  out  = {dir = "out",       dx =  0, dy =  0, dz =  0},
+  n    = {dx =  0, dy =  1, dz =  0},
+  s    = {dx =  0, dy = -1, dz =  0},
+  e    = {dx =  1, dy =  0, dz =  0},
+  w    = {dx = -1, dy =  0, dz =  0},
+  ne   = {dx =  1, dy =  1, dz =  0},
+  nw   = {dx = -1, dy =  1, dz =  0},
+  se   = {dx =  1, dy = -1, dz =  0},
+  sw   = {dx = -1, dy = -1, dz =  0},
+  up   = {dx =  0, dy =  0, dz =  1},
+  down = {dx =  0, dy =  0, dz = -1},
+  ["in"] = {dx =  0, dy =  0, dz =  0},
+  out  = {dx =  0, dy =  0, dz =  0},
 }
 
 cthulhu.mapper.stanza_precedente = nil
 cthulhu.mapper.ultima_direzione = nil
+cthulhu.mapper.stanze_create = 0
 
 -- Ricorda l'ultimo comando digitato: serve a capire in che direzione ci
 -- si e' mossi, per posizionare una stanza nuova accanto a quella da cui
@@ -80,16 +95,16 @@ local function coordinateNuove()
   return x + 2, y, z
 end
 
-function cthulhu.mapper.aggiorna()
+local function aggiornaMappa()
   local info = gmcp.Room and gmcp.Room.Info
   if not info or not info.num then return end
   local id = tonumber(info.num)
 
-  local nuova = not roomExists(id)
-  if nuova then
+  if not roomExists(id) then
     addRoom(id)
     local x, y, z = coordinateNuove()
     setRoomCoordinates(id, x, y, z)
+    cthulhu.mapper.stanze_create = cthulhu.mapper.stanze_create + 1
   end
 
   setRoomName(id, info.name or ("stanza " .. id))
@@ -101,10 +116,9 @@ function cthulhu.mapper.aggiorna()
   -- stanze gia' note; quelle ancora inesplorate verranno collegate
   -- quando ci si arrivera' davvero.
   for sigla, destinazione in pairs(info.exits or {}) do
-    local d = cthulhu.mapper.direzioni[sigla]
     local dest = tonumber(destinazione)
-    if d and dest and roomExists(dest) then
-      setExit(id, dest, d.dir)
+    if cthulhu.mapper.direzioni[sigla] and dest and roomExists(dest) then
+      setExit(id, dest, sigla)          -- sigla breve: vedi la nota sopra
     end
   end
 
@@ -123,33 +137,69 @@ function cthulhu.mapper.aggiorna()
   updateMap()
 end
 
+-- Un errore qui dentro non deve passare inosservato: la prima versione
+-- falliva in silenzio e sembrava che il pacchetto non fosse installato.
+function cthulhu.mapper.aggiorna()
+  local ok, err = pcall(aggiornaMappa)
+  if not ok then
+    cthulhu.ultimoErrore = tostring(err)
+    cecho("\n<red>[mappa] errore: " .. tostring(err) .. "<reset>\n")
+    cecho("<dark_orange>Scrivi MAPPADIAG per un quadro completo.<reset>\n")
+  end
+end
+
 -- ------------------------------------------------------- barre di stato
+--
+-- Volutamente SPENTE all'avvio: il pannello laterale di Mudlet mostra
+-- gia' Vita, Mana e Movimento leggendoli dal nostro stesso Char.Vitals,
+-- e delle barre in fondo alla finestra principale coprirebbero l'ultima
+-- riga di testo. Restano disponibili con BARRE ON per chi vuole anche la
+-- Sanita' mentale, che il pannello laterale non conosce; in quel caso si
+-- riserva lo spazio col bordo inferiore, cosi' non coprono piu' nulla.
 cthulhu.stato = cthulhu.stato or {}
+cthulhu.stato.attive = false
+local ALTEZZA_BARRE = 28   -- pixel riservati in fondo quando sono accese
 
 function cthulhu.stato.crea()
   if cthulhu.stato.contenitore then return end
   cthulhu.stato.contenitore = Geyser.Container:new({
     name = "cthulhu_stato",
-    x = "0%", y = "-4%", width = "100%", height = "4%",
+    x = 0, y = -ALTEZZA_BARRE, width = "100%", height = ALTEZZA_BARRE,
   })
-  cthulhu.stato.hp     = Geyser.Gauge:new({name = "cthulhu_hp",
-      x = "0%",  y = "0%", width = "24%", height = "100%"}, cthulhu.stato.contenitore)
-  cthulhu.stato.mana   = Geyser.Gauge:new({name = "cthulhu_mana",
-      x = "25%", y = "0%", width = "24%", height = "100%"}, cthulhu.stato.contenitore)
-  cthulhu.stato.mv     = Geyser.Gauge:new({name = "cthulhu_mv",
-      x = "50%", y = "0%", width = "24%", height = "100%"}, cthulhu.stato.contenitore)
-  cthulhu.stato.sanity = Geyser.Gauge:new({name = "cthulhu_sanity",
-      x = "75%", y = "0%", width = "24%", height = "100%"}, cthulhu.stato.contenitore)
-
-  cthulhu.stato.hp.front:setStyleSheet("background-color: rgb(140,20,20);")
-  cthulhu.stato.mana.front:setStyleSheet("background-color: rgb(40,60,150);")
-  cthulhu.stato.mv.front:setStyleSheet("background-color: rgb(40,120,50);")
+  local function barra(nome, x, colore)
+    local g = Geyser.Gauge:new({name = nome, x = x, y = "0%",
+                                width = "24%", height = "100%"},
+                               cthulhu.stato.contenitore)
+    g.front:setStyleSheet("background-color: " .. colore .. ";")
+    return g
+  end
+  cthulhu.stato.hp     = barra("cthulhu_hp",     "0%",  "rgb(140,20,20)")
+  cthulhu.stato.mana   = barra("cthulhu_mana",   "25%", "rgb(40,60,150)")
+  cthulhu.stato.mv     = barra("cthulhu_mv",     "50%", "rgb(40,120,50)")
   -- verde tossico: la stessa famiglia cromatica che il gioco usa per il
   -- Mythos e la magia (game/world/colori.py)
-  cthulhu.stato.sanity.front:setStyleSheet("background-color: rgb(90,160,40);")
+  cthulhu.stato.sanity = barra("cthulhu_sanity", "75%", "rgb(90,160,40)")
+end
+
+function cthulhu.stato.mostra(acceso)
+  cthulhu.stato.attive = acceso and true or false
+  if cthulhu.stato.attive then
+    cthulhu.stato.crea()
+    -- riserva lo spazio: senza questo le barre si sovrappongono
+    -- all'ultima riga di testo dell'ambientazione
+    setBorderBottom(ALTEZZA_BARRE)
+    cthulhu.stato.contenitore:show()
+    cthulhu.stato.aggiorna()
+    cecho("\n<green_yellow>Barre di stato accese (con Sanita' mentale).<reset>\n")
+  else
+    if cthulhu.stato.contenitore then cthulhu.stato.contenitore:hide() end
+    setBorderBottom(0)
+    cecho("\n<green_yellow>Barre di stato spente: restano quelle del pannello laterale.<reset>\n")
+  end
 end
 
 function cthulhu.stato.aggiorna()
+  if not cthulhu.stato.attive then return end
   local v = gmcp.Char and gmcp.Char.Vitals
   if not v then return end
   cthulhu.stato.crea()
@@ -165,13 +215,78 @@ function cthulhu.stato.aggiorna()
   imposta(cthulhu.stato.sanity, v.sanity, v.maxsanity, "Sanita'")
 end
 
+-- ------------------------------------------------------ finestra mappa
+function cthulhu.apriMappa()
+  -- createMapper con coordinate crea il mappatore dentro la finestra
+  -- principale; senza, Mudlet usa il pannello agganciato se c'e'.
+  if openMapWidget then
+    openMapWidget()
+    cecho("\n<green_yellow>Finestra mappa aperta.<reset>\n")
+  else
+    createMapper(0, 0, 400, 400)
+    cecho("\n<green_yellow>Mappatore creato nella finestra principale.<reset>\n")
+  end
+  if cthulhu.mapper.stanza_precedente then
+    centerview(cthulhu.mapper.stanza_precedente)
+  end
+  updateMap()
+end
+
+-- ------------------------------------------------------- diagnostica
+function cthulhu.diagnostica()
+  local function riga(etichetta, valore, buono)
+    local colore = buono and "green_yellow" or "orange_red"
+    cecho(string.format("  <white>%-34s<%s>%s<reset>\n", etichetta, colore, tostring(valore)))
+  end
+  cecho("\n<green_yellow>--- diagnostica CthulhuMUD Redux ---<reset>\n")
+
+  local haGmcp = gmcp ~= nil
+  riga("tabella gmcp presente", haGmcp, haGmcp)
+
+  local info = gmcp and gmcp.Room and gmcp.Room.Info
+  riga("gmcp.Room.Info ricevuto", info ~= nil, info ~= nil)
+  if info then
+    riga("  stanza corrente", tostring(info.num) .. " - " .. tostring(info.name), true)
+    riga("  area", tostring(info.area), true)
+    local nc, ns = 0, 0
+    for _ in pairs(info.exits or {}) do nc = nc + 1 end
+    for _ in pairs(info.specials or {}) do ns = ns + 1 end
+    riga("  uscite cardinali", nc, true)
+    riga("  uscite con nome proprio", ns, true)
+    local esiste = roomExists(tonumber(info.num))
+    riga("  esiste nella mappa", esiste, esiste)
+  end
+
+  local v = gmcp and gmcp.Char and gmcp.Char.Vitals
+  riga("gmcp.Char.Vitals ricevuto", v ~= nil, v ~= nil)
+
+  local aree = getAreaTable() or {}
+  local na = 0
+  for _ in pairs(aree) do na = na + 1 end
+  riga("aree nella mappa", na, na > 0)
+  riga("stanze create da questa sessione", cthulhu.mapper.stanze_create,
+       cthulhu.mapper.stanze_create > 0)
+  riga("barre di stato in basso", cthulhu.stato.attive and "accese" or "spente", true)
+  riga("ultimo errore del mappatore", cthulhu.ultimoErrore or "nessuno",
+       cthulhu.ultimoErrore == nil)
+
+  if not info then
+    cecho("\n<orange_red>Non e' arrivato alcun Room.Info.<reset> Muoviti di una stanza:\n")
+    cecho("il server lo manda a ogni spostamento e al collegamento.\n")
+    cecho("Se non arriva comunque, il GMCP e' spento nel client.\n")
+  elseif na == 0 then
+    cecho("\n<orange_red>I dati arrivano ma la mappa e' vuota.<reset> Prova <white>MAPPA<reset>.\n")
+  else
+    cecho("\n<green_yellow>Tutto a posto.<reset> Se non vedi nulla, apri la finestra con <white>MAPPA<reset>.\n")
+  end
+end
+
 -- ------------------------------------------------------------- avvio
 function cthulhu.avvia()
-  if not getMapperWindowInfo then
-    -- Mudlet vecchio: apre comunque il mappatore nella finestra di destra
-    createMapper(0, 0, 400, 400)
-  end
-  cecho("\n<green_yellow>CthulhuMUD Redux: mappatore e barre di stato attivi.<reset>\n")
+  cecho("\n<green_yellow>CthulhuMUD Redux: pacchetto attivo.<reset>\n")
+  cecho("<grey>  MAPPA<reset> apre la mappa  ")
+  cecho("<grey>MAPPADIAG<reset> diagnostica  ")
+  cecho("<grey>BARRE ON<reset> barre in basso (con Sanita')\n")
 end
 
 

@@ -92,14 +92,29 @@ Il pacchetto da importare si trova in `client/mudlet/` nel repository.
 
 ### Installazione
 
-1. In Mudlet, accendi il protocollo: **Settings → Protocols → Enable
-   GMCP**. Senza questo il pacchetto si installa ma non riceve nulla.
-2. **Toolbox → Package Manager → Install**, e scegli
+1. **Toolbox → Package Manager → Install**, e scegli
    `CthulhuMudRedux.xml`.
-3. Riconnettiti. Deve comparire la riga *"CthulhuMUD Redux: mappatore e
-   barre di stato attivi"*.
-4. Apri la finestra della mappa dal pulsante **Map**: in Mudlet 5 non si
-   apre da sola.
+2. Riconnettiti. Deve comparire la riga *"CthulhuMUD Redux: pacchetto
+   attivo"*.
+3. Scrivi `mappa` per aprire la finestra della mappa.
+
+Il GMCP in Mudlet 5 è acceso di serie: non c'è nulla da abilitare. La
+prova che funzioni è immediata — se dopo il collegamento vedi i valori di
+Vita e Mana nel pannello laterale, i dati stanno già arrivando.
+
+### I comandi del pacchetto
+
+| comando | cosa fa |
+|---|---|
+| `mappa` | apre (o riaggancia) la finestra della mappa |
+| `mappadiag` | diagnostica: dice cosa arriva e dove si è inceppato |
+| `barre on` | barre di stato in fondo, **con la Sanità mentale** |
+| `barre off` | le nasconde (impostazione di partenza) |
+
+Le barre in fondo sono spente di serie perché il pannello laterale di
+Mudlet mostra già Vita, Mana e Movimento, e delle barre in basso
+coprirebbero l'ultima riga di testo. Restano disponibili per un motivo
+solo: il pannello laterale non conosce la Sanità mentale.
 
 ### Cosa fa
 
@@ -124,3 +139,7 @@ speedwalk, ma senza una posizione geometrica.
 In pratica le vie di Arkham e il relitto dello U-29 vengono disegnati
 ordinatamente, mentre gli interni degli edifici pendono di lato. Le stanze
 si possono trascinare a mano dove si preferisce: Mudlet salva la posizione.
+
+Un collegamento viene tracciato solo quando **entrambe** le stanze sono
+già state visitate: finché non hai messo piede nella destinazione,
+l'uscita esiste nel gioco ma non ancora sulla mappa.
