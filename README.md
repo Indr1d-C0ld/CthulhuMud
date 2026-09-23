@@ -50,7 +50,7 @@ Il corpus di ricerca usato durante lo sviluppo (una scansione della documentazio
 - IA dei mostri: aggro, assist tra mob, inseguimento multi-stanza, pattugliamento, sensibilità alla fase lunare
 - Economia a 5 valute con cambio, banche, negozi, forgiatura d'armi/armature
 - Società/Clan, gruppi con assist automatico, addomesticamento NPC
-- **Istruttori e mercanti intoccabili**: nessun giocatore può ucciderli, stregarli o portarli via, così botteghe e scuole restano sempre aperte
+- **NPC di servizio intoccabili**: istruttori, mercanti, terapeuti, albergatori e l'Ufficio Taglie non si possono uccidere, stregare o portare via, così ogni servizio del gioco resta sempre aperto
 - WORSHIP/SACRIFICE verso 7 divinità del Mythos
 - Dreamlands esplorabili (Ulthar, Villaggio degli Zoog) con rischio di incubi
 - Arkham (73 edifici) e il Cairo ricostruiti in dettaglio, raggiungibili l'uno dall'altro via nave

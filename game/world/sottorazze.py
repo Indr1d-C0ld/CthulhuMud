@@ -332,7 +332,7 @@ def tenta_bite(vampiro, vittima):
         return False, "Non sei un Vampiro."
     if not vampiro.db.zanne_visibili:
         return False, "Devi prima scoprire le zanne (VAMPIRE FANGS)."
-    # istruttori e mercanti: altrimenti il morso annuncerebbe un danno che
+    # NPC di servizio (NPC.intoccabile): altrimenti il morso annuncerebbe un danno che
     # subisci_danno poi annulla
     from world.pk import e_intoccabile, messaggio_intoccabile
     if e_intoccabile(vittima):

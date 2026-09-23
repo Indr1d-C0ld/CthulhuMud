@@ -175,7 +175,7 @@ def lancia_incantesimo(caster, spell_id, bersaglio=None, testo=None, rituale=Fal
     # un lancio andato a vuoto.
     if spell.get("solo_oggetti") and not e_oggetto_inanimato(bersaglio):
         return False, "Questo incantesimo agisce solo sugli oggetti: indica quale."
-    # Istruttori e mercanti non possono essere bersaglio di incantesimi
+    # Gli NPC di servizio (NPC.intoccabile) non possono essere bersaglio di incantesimi
     # altrui, qualunque sia l'effetto. Non basta escludere gli ostili: anche
     # Ammaliare (li trasforma in seguaci e li porta via dalla bottega),
     # Teletrasporto ed Evocazione (li spostano altrove) svuoterebbero un
@@ -400,7 +400,7 @@ def _infliggi_danno_magico(caster, bersaglio, danno, verbo):
     e dell'eventuale Assorbimento Magico, poi gestisce morte/ingaggio -
     la stessa logica che _effetto_shocking_grasp gia' scriveva a mano,
     centralizzata per non ripeterla in 30 funzioni diverse."""
-    # Istruttori e mercanti non vengono toccati dagli incantesimi ad area:
+    # Gli NPC di servizio (NPC.intoccabile) non vengono toccati dagli incantesimi ad area:
     # ne' danno, ne' messaggio (che annuncerebbe un danno inesistente), ne'
     # soprattutto il contrattacco qui sotto, che li faceva entrare in
     # combattimento contro chi aveva lanciato.
@@ -2326,7 +2326,7 @@ def _effetto_greater_creation(caster, bersaglio, testo):
 def _effetto_cause_riot(caster, bersaglio, testo):
     caster.location.msg_contents(magia(f"{caster.key} scatena le forze del caos: la follia si diffonde nell'aria!"))
     for npc in list(caster.location.contents):
-        # istruttori e mercanti non si uniscono alla sommossa: altrimenti il
+        # gli NPC di servizio non si uniscono alla sommossa: altrimenti il
         # bottegaio diventerebbe per sempre ostile e aggressivo a vista
         if getattr(npc, "intoccabile", False):
             continue

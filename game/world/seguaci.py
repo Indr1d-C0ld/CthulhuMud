@@ -52,7 +52,7 @@ def e_addomesticabile(npc):
         return False
     if npc.db.negozio or npc.db.incudine:
         return False
-    # istruttori compresi (NPC.intoccabile): il controllo sul negozio qui
+    # istruttori, terapeuti, albergatori compresi (NPC.intoccabile): il controllo sul negozio qui
     # sopra c'era gia', ma il Dr. Armitage si poteva addomesticare
     if getattr(npc, "intoccabile", False):
         return False

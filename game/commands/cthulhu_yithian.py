@@ -46,7 +46,7 @@ class CmdMindtransfer(MuxCommand):
         if npc.db.yithian_originale or npc.account:
             caller.msg(f"{npc.key} e' gia' occupato/a da qualcun altro.")
             return
-        # istruttori e mercanti: possederli li porterebbe via dal loro
+        # NPC di servizio (NPC.intoccabile): possederli li porterebbe via dal loro
         # posto (e YITHABDUCT fino alla Biblioteca Yithiana)
         from world.pk import e_intoccabile, messaggio_intoccabile
         if e_intoccabile(npc):

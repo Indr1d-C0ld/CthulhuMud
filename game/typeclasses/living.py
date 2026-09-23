@@ -128,7 +128,7 @@ class LivingMixin:
             # contrattaccare contro chi l'aveva lanciato.
             return
         if getattr(bersaglio, "intoccabile", False):
-            # istruttori e mercanti non si ingaggiano (KILL/MURDER lo
+            # gli NPC di servizio non si ingaggiano (KILL/MURDER lo
             # rifiutano gia' prima; questo copre mosse speciali, assist di
             # gruppo e qualunque altro percorso)
             if hasattr(self, "msg"):
@@ -283,7 +283,7 @@ class LivingMixin:
         "...2" (Fase K, decima tornata: le Parole elementali) si sommano ai
         primi invece di sostituirli, perche' la fonte permette di avere una
         Parola e una Benedizione elementale attive insieme."""
-        # Istruttori e mercanti (NPC.intoccabile): nessun danno, da nessuna
+        # NPC di servizio (NPC.intoccabile): nessun danno, da nessuna
         # fonte. Tutte le morti del gioco passano da qui (armi, incantesimi,
         # mosse speciali, voodoo, effetti ad area, danni periodici): e'
         # l'unico punto che copre anche i percorsi aggiunti in futuro.

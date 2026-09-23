@@ -476,15 +476,29 @@ cancellazione programmata può essere un `delay(N, x.delete)` nudo — quest'ult
 analizzata sull'albero sintattico, perché una docstring che descrive il
 vecchio difetto non deve far scattare il controllo.
 
-## Istruttori e mercanti intoccabili: dove sta la regola
+## NPC di servizio intoccabili: dove sta la regola
 
 La protezione è la proprietà `NPC.intoccabile` (`typeclasses/npcs.py`),
-vera per chi ha `db.negozio` o `db.is_practice_trainer`: ricavata dal
-ruolo, non da un flag da ricordarsi. `db.intoccabile` resta come
-interruttore esplicito per estenderla ad altri NPC — terapeuti,
-locandieri, l'impiegato dell'ufficio taglie — senza toccare il codice.
-Oggi gli intoccabili sono 53: 52 mercanti e 2 istruttori, con Maro il
-fabbro che è entrambe le cose.
+ricavata dal ruolo e non da un flag da ricordarsi: è vera per chi ha uno
+degli attributi elencati in `NPC.RUOLI_INTOCCABILI`, ciascuno impostato
+dal proprio script di popolamento.
+
+| Ruolo | Attributo | Chi lo imposta | Nel mondo |
+|---|---|---|---|
+| mercante | `db.negozio` | gli script `popola_negozi*` | 52 |
+| istruttore | `db.is_practice_trainer` | Dr. Armitage, Maro il fabbro | 2 |
+| terapeuta | `db.terapeuta` | `world/popola_terapeuti.py` | 8 |
+| albergatore | `db.albergatore` | `world/popola_alberghi.py` | 4 |
+| impiegato dell'Ufficio Taglie | `db.impiegato_taglie` | `world/rooms_bounty_office.py` | 1 |
+
+Oggi gli intoccabili sono 66, perché Maro il fabbro è sia mercante sia
+istruttore. Nessuno dei 79 mostri del bestiario lo è. La prima versione
+della regola copriva solo istruttori e mercanti; terapeuti, albergatori e
+l'impiegato delle taglie sono stati aggiunti subito dopo, per la stessa
+ragione: senza di loro un servizio del gioco sparisce. Un nuovo ruolo di
+servizio si protegge aggiungendo il suo attributo a `RUOLI_INTOCCABILI`;
+un singolo NPC qualunque, impostando `db.intoccabile = True` dal gioco,
+senza toccare il codice.
 
 Invece di bloccare i comandi uno per uno, la regola sta nei **punti di
 passaggio obbligati**, così copre anche i percorsi che verranno aggiunti:

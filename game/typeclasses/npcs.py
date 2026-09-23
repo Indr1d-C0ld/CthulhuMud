@@ -40,23 +40,36 @@ class NPC(LivingMixin, ObjectParent, DefaultCharacter):
         "yithian_originale": None, "protetto": False,
     }
 
+    # Gli attributi di RUOLO che rendono un NPC intoccabile, ciascuno
+    # impostato dal proprio script di popolamento: istruttori, mercanti,
+    # terapeuti (world/popola_terapeuti.py), albergatori
+    # (world/popola_alberghi.py) e l'impiegato dell'Ufficio Taglie
+    # (world/rooms_bounty_office.py).
+    RUOLI_INTOCCABILI = ("is_practice_trainer", "negozio", "terapeuta",
+                         "albergatore", "impiegato_taglie")
+
     @property
     def intoccabile(self):
-        """Vero per istruttori e mercanti: nessun giocatore puo' fargli del
-        male, ne' impadronirsene (scelta di design del porting, decisa
-        dopo l'audit totale).
+        """Vero per chi offre un servizio ai giocatori - istruttori,
+        mercanti, terapeuti, albergatori, l'impiegato dell'Ufficio Taglie:
+        nessun giocatore puo' fargli del male, ne' impadronirsene (scelta
+        di design del porting, decisa dopo l'audit totale e poi estesa
+        dai soli istruttori e mercanti a tutti i servizi).
 
         Il motivo: il gioco dipende da loro. Morto un mercante sparisce la
         sua bottega; morto il Dr. Armitage la stanza di partenza resta
-        senza l'unico istruttore di incantesimi. E niente li riportava in
+        senza l'unico istruttore di incantesimi; morto un terapeuta non si
+        cura piu' la sanita' in quella citta'. E niente li riportava in
         vita, se non COSTRUISCIMONDO lanciato a mano dallo staff.
 
-        E' ricavato dal RUOLO, non da un flag da ricordarsi di impostare:
-        un mercante o un istruttore aggiunto domani e' protetto da solo.
-        db.intoccabile resta come interruttore esplicito, per estendere la
-        protezione ad altri NPC (per esempio i terapeuti) senza toccare il
+        E' ricavato dal RUOLO (RUOLI_INTOCCABILI qui sopra), non da un flag
+        da ricordarsi di impostare: un mercante aggiunto domani e' protetto
+        da solo. db.intoccabile resta come interruttore esplicito, per
+        estendere la protezione a un NPC qualunque senza toccare il
         codice. Lo staff conserva SLAY, che non passa di qui."""
-        return bool(self.db.intoccabile or self.db.is_practice_trainer or self.db.negozio)
+        if self.db.intoccabile:
+            return True
+        return any(self.attributes.get(ruolo) for ruolo in self.RUOLI_INTOCCABILI)
 
     def get_display_name(self, looker, **kwargs):
         """helps/bounty.txt: "the subject of your search will have the

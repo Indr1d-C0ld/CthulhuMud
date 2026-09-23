@@ -120,7 +120,7 @@ def uccidi_o_murder(attaccante, bersaglio, comando_murder):
     """Logica condivisa da KILL/MURDER (vedi commands/cthulhu_pk.py):
     ritorna (ok: bool, messaggio: str|None). Se ok, il chiamante avvia
     normalmente il combattimento con avvia_combattimento()."""
-    # Istruttori e mercanti: nemmeno MURDER (a differenza di db.protetto,
+    # NPC di servizio (NPC.intoccabile): nemmeno MURDER (a differenza di db.protetto,
     # che si puo' forzare diventando criminali).
     if e_intoccabile(bersaglio):
         return False, messaggio_intoccabile(bersaglio)
@@ -388,7 +388,7 @@ def marca_npc_protetti():
 
 
 # ---------------------------------------------------------------------
-# Istruttori e mercanti intoccabili (scelta di design, vedi
+# NPC di servizio intoccabili (scelta di design, vedi
 # typeclasses/npcs.py:NPC.intoccabile)
 # ---------------------------------------------------------------------
 
@@ -402,5 +402,5 @@ def e_intoccabile(obj):
 def messaggio_intoccabile(obj):
     """Lo stesso messaggio ovunque la regola scatti, cosi' il giocatore
     capisce che e' una regola del gioco e non un guasto."""
-    return (f"Non puoi fare del male a {obj.key}: istruttori e mercanti sono "
-            "intoccabili.")
+    return (f"Non puoi fare del male a {obj.key}: istruttori, mercanti, "
+            "terapeuti, albergatori e l'Ufficio Taglie sono intoccabili.")
