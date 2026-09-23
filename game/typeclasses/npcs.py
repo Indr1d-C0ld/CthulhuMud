@@ -40,6 +40,24 @@ class NPC(LivingMixin, ObjectParent, DefaultCharacter):
         "yithian_originale": None, "protetto": False,
     }
 
+    @property
+    def intoccabile(self):
+        """Vero per istruttori e mercanti: nessun giocatore puo' fargli del
+        male, ne' impadronirsene (scelta di design del porting, decisa
+        dopo l'audit totale).
+
+        Il motivo: il gioco dipende da loro. Morto un mercante sparisce la
+        sua bottega; morto il Dr. Armitage la stanza di partenza resta
+        senza l'unico istruttore di incantesimi. E niente li riportava in
+        vita, se non COSTRUISCIMONDO lanciato a mano dallo staff.
+
+        E' ricavato dal RUOLO, non da un flag da ricordarsi di impostare:
+        un mercante o un istruttore aggiunto domani e' protetto da solo.
+        db.intoccabile resta come interruttore esplicito, per estendere la
+        protezione ad altri NPC (per esempio i terapeuti) senza toccare il
+        codice. Lo staff conserva SLAY, che non passa di qui."""
+        return bool(self.db.intoccabile or self.db.is_practice_trainer or self.db.negozio)
+
     def get_display_name(self, looker, **kwargs):
         """helps/bounty.txt: "the subject of your search will have the
         [TARGET] flag next to its name" - mostrato solo a chi ha

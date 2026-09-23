@@ -122,6 +122,19 @@ class LivingMixin:
         Affrontare qualcosa di orrorifico (db.orrore sul bersaglio) costa
         sanity (vedi world/sanita.py) - confermato meccanica reale dalla
         fonte, non solo uno stat cosmetico."""
+        if getattr(self, "intoccabile", False):
+            # e un intoccabile non ingaggia mai nessuno: e' un non
+            # combattente. Senza questo, un incantesimo ad area lo faceva
+            # contrattaccare contro chi l'aveva lanciato.
+            return
+        if getattr(bersaglio, "intoccabile", False):
+            # istruttori e mercanti non si ingaggiano (KILL/MURDER lo
+            # rifiutano gia' prima; questo copre mosse speciali, assist di
+            # gruppo e qualunque altro percorso)
+            if hasattr(self, "msg"):
+                from world.pk import messaggio_intoccabile
+                self.msg(messaggio_intoccabile(bersaglio))
+            return
         if getattr(bersaglio, "db", None) and (bersaglio.db.stati or {}).get("astrale"):
             # Fase K, ottava tornata: Cammino Astrale - un corpo astrale non
             # puo' essere ingaggiato in combattimento normale (confermato
@@ -270,6 +283,13 @@ class LivingMixin:
         "...2" (Fase K, decima tornata: le Parole elementali) si sommano ai
         primi invece di sostituirli, perche' la fonte permette di avere una
         Parola e una Benedizione elementale attive insieme."""
+        # Istruttori e mercanti (NPC.intoccabile): nessun danno, da nessuna
+        # fonte. Tutte le morti del gioco passano da qui (armi, incantesimi,
+        # mosse speciali, voodoo, effetti ad area, danni periodici): e'
+        # l'unico punto che copre anche i percorsi aggiunti in futuro.
+        # Fa eccezione solo SLAY dello staff, che non passa di qui.
+        if getattr(self, "intoccabile", False):
+            return False
         if fisico:
             riduzione = (self.db.riduzione_danno_temp or 0) + (self.db.riduzione_danno_temp2 or 0)
         else:

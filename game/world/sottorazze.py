@@ -332,6 +332,11 @@ def tenta_bite(vampiro, vittima):
         return False, "Non sei un Vampiro."
     if not vampiro.db.zanne_visibili:
         return False, "Devi prima scoprire le zanne (VAMPIRE FANGS)."
+    # istruttori e mercanti: altrimenti il morso annuncerebbe un danno che
+    # subisci_danno poi annulla
+    from world.pk import e_intoccabile, messaggio_intoccabile
+    if e_intoccabile(vittima):
+        return False, messaggio_intoccabile(vittima)
     if vampiro.db.combat_target is not vittima:
         vampiro.avvia_combattimento(vittima)
     if random.uniform(0, 100) > vampiro.calcola_hit_chance(vittima, forza_disarmato=True):

@@ -42,6 +42,12 @@ class CmdCut(Command):
         if bersaglio is caller:
             caller.msg("Non serve tagliare i tuoi stessi capelli.")
             return
+        # istruttori e mercanti: la bambola che se ne ricaverebbe servirebbe
+        # solo a far loro del male a distanza
+        from world.pk import e_intoccabile, messaggio_intoccabile
+        if e_intoccabile(bersaglio):
+            caller.msg(messaggio_intoccabile(bersaglio))
+            return
         capelli = create.create_object(
             "typeclasses.objects.Object", key=f"una ciocca di capelli di {bersaglio.key}", location=caller,
         )

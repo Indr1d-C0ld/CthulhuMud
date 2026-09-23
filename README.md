@@ -50,6 +50,7 @@ Il corpus di ricerca usato durante lo sviluppo (una scansione della documentazio
 - IA dei mostri: aggro, assist tra mob, inseguimento multi-stanza, pattugliamento, sensibilità alla fase lunare
 - Economia a 5 valute con cambio, banche, negozi, forgiatura d'armi/armature
 - Società/Clan, gruppi con assist automatico, addomesticamento NPC
+- **Istruttori e mercanti intoccabili**: nessun giocatore può ucciderli, stregarli o portarli via, così botteghe e scuole restano sempre aperte
 - WORSHIP/SACRIFICE verso 7 divinità del Mythos
 - Dreamlands esplorabili (Ulthar, Villaggio degli Zoog) con rischio di incubi
 - Arkham (73 edifici) e il Cairo ricostruiti in dettaglio, raggiungibili l'uno dall'altro via nave
@@ -111,7 +112,7 @@ ordinati, gli interni degli edifici pendono di lato.
 
 ## Il Codex
 
-[`codex/codex_cthulhumud.pdf`](codex/codex_cthulhumud.pdf) è il manuale di gioco completo: 145 pagine che coprono ogni sistema (personaggio, magia, combattimento, economia, luoghi, comunicazione, strumenti di staff), con fonti citate e distinzione esplicita fonte/scelta di design. Rigenerabile da sorgente con `bash codex/build.sh` (richiede `pandoc` e `weasyprint`).
+[`codex/codex_cthulhumud.pdf`](codex/codex_cthulhumud.pdf) è il manuale di gioco completo: 147 pagine che coprono ogni sistema (personaggio, magia, combattimento, economia, luoghi, comunicazione, strumenti di staff), con fonti citate e distinzione esplicita fonte/scelta di design. Rigenerabile da sorgente con `bash codex/build.sh` (richiede `pandoc` e `weasyprint`).
 
 ## Requisiti
 

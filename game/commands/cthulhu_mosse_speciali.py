@@ -27,6 +27,14 @@ def _trova_bersaglio(caller, testo):
     if not hasattr(bersaglio, "avvia_combattimento"):
         caller.msg("Non puoi farlo a questo.")
         return None
+    # Istruttori e mercanti: fermati qui, prima della mossa. Piu' a valle
+    # il danno verrebbe comunque annullato, ma la mossa annuncerebbe "per 5
+    # danni!" senza infliggerne nessuno; e sgambetto, disarmo e terra negli
+    # occhi colpiscono senza fare danno.
+    from world.pk import e_intoccabile, messaggio_intoccabile
+    if e_intoccabile(bersaglio):
+        caller.msg(messaggio_intoccabile(bersaglio))
+        return None
     return bersaglio
 
 

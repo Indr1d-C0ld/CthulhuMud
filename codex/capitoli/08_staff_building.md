@@ -475,3 +475,38 @@ bersaglio e testo deve trovare CAST pronto a gestirlo; e nessuna
 cancellazione programmata può essere un `delay(N, x.delete)` nudo — quest'ultima
 analizzata sull'albero sintattico, perché una docstring che descrive il
 vecchio difetto non deve far scattare il controllo.
+
+## Istruttori e mercanti intoccabili: dove sta la regola
+
+La protezione è la proprietà `NPC.intoccabile` (`typeclasses/npcs.py`),
+vera per chi ha `db.negozio` o `db.is_practice_trainer`: ricavata dal
+ruolo, non da un flag da ricordarsi. `db.intoccabile` resta come
+interruttore esplicito per estenderla ad altri NPC — terapeuti,
+locandieri, l'impiegato dell'ufficio taglie — senza toccare il codice.
+Oggi gli intoccabili sono 53: 52 mercanti e 2 istruttori, con Maro il
+fabbro che è entrambe le cose.
+
+Invece di bloccare i comandi uno per uno, la regola sta nei **punti di
+passaggio obbligati**, così copre anche i percorsi che verranno aggiunti:
+
+- `LivingMixin.subisci_danno` — tutte le morti del gioco passano da qui
+  (armi, incantesimi, mosse speciali, vudù, effetti ad area, danni
+  periodici), eccetto `SLAY` dello staff;
+- `LivingMixin.avvia_combattimento` — un intoccabile non si ingaggia e non
+  ingaggia mai nessuno;
+- `world/pk.py:uccidi_o_murder` — il cancello di `KILL` e `MURDER`;
+- `world/magic.py:lancia_incantesimo` — nessun incantesimo altrui, prima di
+  scalare il mana; e `_infliggi_danno_magico`, l'aiutante di una trentina di
+  incantesimi d'attacco, che li salta negli effetti ad area.
+
+I pochi punti in più servono a dare un messaggio chiaro invece di un danno
+annunciato e poi annullato: `_trova_bersaglio` delle mosse speciali (che
+copre anche sgambetto, disarmo e terra negli occhi, che non fanno danno),
+`tenta_bite`, `CUT` del vudù, `TAME`, `MINDTRANSFER`, `LICH DOMINATE`, e
+Sommossa, che senza la guardia avrebbe reso il bottegaio ostile per sempre.
+
+Il collaudo ha trovato un caso che solo l'esecuzione poteva mostrare:
+`_infliggi_danno_magico`, dopo il danno, fa contrattaccare il bersaglio.
+Con il danno annullato ma il contrattacco ancora attivo, un Terremoto
+faceva entrare il mercante in combattimento contro il giocatore. Da qui la
+regola che un intoccabile non ingaggia mai nessuno.

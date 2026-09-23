@@ -175,6 +175,14 @@ def lancia_incantesimo(caster, spell_id, bersaglio=None, testo=None, rituale=Fal
     # un lancio andato a vuoto.
     if spell.get("solo_oggetti") and not e_oggetto_inanimato(bersaglio):
         return False, "Questo incantesimo agisce solo sugli oggetti: indica quale."
+    # Istruttori e mercanti non possono essere bersaglio di incantesimi
+    # altrui, qualunque sia l'effetto. Non basta escludere gli ostili: anche
+    # Ammaliare (li trasforma in seguaci e li porta via dalla bottega),
+    # Teletrasporto ed Evocazione (li spostano altrove) svuoterebbero un
+    # negozio senza fare un solo punto di danno.
+    from world.pk import e_intoccabile, messaggio_intoccabile
+    if bersaglio is not None and bersaglio is not caster and e_intoccabile(bersaglio):
+        return False, messaggio_intoccabile(bersaglio)
 
     costo = _costo_effettivo(caster, spell)
     if (caster.db.mana or 0) < costo:
@@ -392,6 +400,12 @@ def _infliggi_danno_magico(caster, bersaglio, danno, verbo):
     e dell'eventuale Assorbimento Magico, poi gestisce morte/ingaggio -
     la stessa logica che _effetto_shocking_grasp gia' scriveva a mano,
     centralizzata per non ripeterla in 30 funzioni diverse."""
+    # Istruttori e mercanti non vengono toccati dagli incantesimi ad area:
+    # ne' danno, ne' messaggio (che annuncerebbe un danno inesistente), ne'
+    # soprattutto il contrattacco qui sotto, che li faceva entrare in
+    # combattimento contro chi aveva lanciato.
+    if getattr(bersaglio, "intoccabile", False):
+        return 0
     from world.equipment import classe_armatura_totale
     riduzione = (classe_armatura_totale(bersaglio) + (bersaglio.db.bonus_ca_temp or 0)) // 4
     danno_finale = max(1, danno - riduzione)
@@ -1145,6 +1159,10 @@ def _tenta_possessione(caster, npc, consente_forti):
     if npc.db.yithian_originale or npc.account:
         caster.msg(f"{npc.key} e' gia' occupato/a da qualcun altro.")
         return
+    from world.pk import e_intoccabile, messaggio_intoccabile
+    if e_intoccabile(npc):
+        caster.msg(messaggio_intoccabile(npc))
+        return
     if not consente_forti and npc.livello_per_equip() > caster.livello_per_equip():
         caster.msg(f"{npc.key} e' troppo forte: ti servirebbe Possessione Maggiore.")
         return
@@ -1501,6 +1519,8 @@ def _effetto_desecrate(caster, bersaglio, testo):
     for presente in list(caster.location.contents):
         if not getattr(presente, "vivo", False) or presente is caster:
             continue
+        if getattr(presente, "intoccabile", False):
+            continue
         if (presente.db.alignment or 0) > 100:
             danno = random.randint(8, 16)
             presente.msg(pericolo(f"Il terreno sconsacrato ti brucia l'anima per {danno} danni!"))
@@ -1756,6 +1776,8 @@ def _effetto_insect_curse(caster, bersaglio, testo):
     caster.location.msg_contents(magia(f"{caster.key} scatena sciami di insetti che infestano la stanza!"))
     for presente in list(caster.location.contents):
         if not getattr(presente, "vivo", False) or presente is caster:
+            continue
+        if getattr(presente, "intoccabile", False):
             continue
         applica_danno_periodico(presente, "punto_da_insetti", 1, 4, 15, 4,
                                  messaggio_tick="Gli insetti ti pungono ovunque, infliggendoti {danno} danni.")
@@ -2304,6 +2326,10 @@ def _effetto_greater_creation(caster, bersaglio, testo):
 def _effetto_cause_riot(caster, bersaglio, testo):
     caster.location.msg_contents(magia(f"{caster.key} scatena le forze del caos: la follia si diffonde nell'aria!"))
     for npc in list(caster.location.contents):
+        # istruttori e mercanti non si uniscono alla sommossa: altrimenti il
+        # bottegaio diventerebbe per sempre ostile e aggressivo a vista
+        if getattr(npc, "intoccabile", False):
+            continue
         if npc.is_typeclass("typeclasses.npcs.NPC", exact=False) and getattr(npc, "vivo", False):
             npc.db.ostile = True
             npc.db.attacca_a_vista = True

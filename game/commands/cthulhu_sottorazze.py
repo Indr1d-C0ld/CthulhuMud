@@ -184,6 +184,10 @@ class CmdLich(MuxCommand):
         if not npc or not npc.is_typeclass("typeclasses.npcs.NPC", exact=False):
             caller.msg("Bersaglio non valido.")
             return
+        from world.pk import e_intoccabile, messaggio_intoccabile
+        if e_intoccabile(npc):
+            caller.msg(messaggio_intoccabile(npc))
+            return
         if not npc.db.non_morto:
             caller.msg(f"{npc.key} non e' un non-morto.")
             return
