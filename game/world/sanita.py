@@ -221,6 +221,9 @@ def esegui_psychology(guaritore, bersaglio):
 
 
 def _completa_psychology(guaritore):
+    # callback programmata: chi cura puo' non esistere piu' quando arriva
+    if not guaritore.pk:
+        return
     dati = guaritore.db.sessione_psicologia_in_corso
     if not dati:
         return

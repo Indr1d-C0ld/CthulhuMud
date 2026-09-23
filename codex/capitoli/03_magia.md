@@ -12,7 +12,7 @@ Per lanciare un qualsiasi incantesimo servono, contemporaneamente (confermato da
 
 Non tutti gli incantesimi richiedono un bersaglio: quelli che lo richiedono e non lo trovano (nessun bersaglio indicato e nessun bersaglio di default disponibile) falliscono immediatamente senza consumare nulla. Durante un combattimento, se non si specifica un bersaglio per un incantesimo ostile, il gioco seleziona automaticamente il nemico contro cui si sta già combattendo (`combat_target`) — la fonte stessa consiglia comunque di indicare sempre il bersaglio a mano per essere sicuri di colpire chi si intende colpire. Gli incantesimi non ostili senza bersaglio specificato di default colpiscono il lanciatore stesso.
 
-Alcuni incantesimi (es. Chiaroveggenza, Ventriloquio, Controllo del Tempo, Cambia Taglia, Telecinesi, Creazione Minore/Maggiore) richiedono invece un **testo libero** al posto o in aggiunta al bersaglio (una direzione, un messaggio, un'indicazione MIGLIORI/PEGGIORI, un oggetto da creare): senza di esso il lancio viene rifiutato a monte.
+Alcuni incantesimi (es. Chiaroveggenza, Ventriloquio, Controllo del Tempo, Cambia Taglia, Telecinesi, Creazione Minore/Maggiore) richiedono invece un **testo libero** al posto o in aggiunta al bersaglio (una direzione, un messaggio, un'indicazione MIGLIORI/PEGGIORI, un oggetto da creare): senza di esso il lancio viene rifiutato a monte. **Ventriloquio** è l'unico che vuole entrambi, un bersaglio *e* un messaggio: si scrive `cast ventriloquate <bersaglio> <messaggio>` (la prima parola è il bersaglio, il resto è ciò che sembrerà dire). Prima dell'audit totale questa combinazione non era gestita e l'incantesimo non si poteva lanciare in alcun modo.
 
 Tre incantesimi (Varco Dimensionale, Evocazione, Teletrasporto), più altri aggiunti in tornate successive per la stessa ragione (Evoca Antico, Anima Arma, Agonia, Incognito), cercano il proprio bersaglio in tutto il mondo di gioco e non nella sola stanza del lanciatore, perché la loro stessa natura lo richiede — per tutti gli altri incantesimi con bersaglio, la ricerca resta limitata alla stanza.
 
@@ -41,6 +41,20 @@ Confermato da *helps/spell_casting.txt* ma rimasto per lungo tempo non implement
 Un'interruzione, per qualunque causa, ha inoltre una probabilità dichiarata del **50%** (`PROBABILITA_AFFATICAMENTO_SU_INTERRUZIONE`, scelta di design) di lasciare il personaggio **affaticato** per 60 secondi (`DURATA_AFFATICAMENTO_SECONDI`) — uno stato temporaneo con effetti negativi, guaribile anzitempo con l'incantesimo Ristoro (o la sua versione potenziata, Passo Leggero). Da non confondere con l'incantesimo offensivo **Fatica** (`fatigue`, famiglia Danno Divino), che indebolisce un nemico drenandogli Forza e movimento: condividono solo il nome italiano, non il meccanismo.
 
 Il mana speso durante la canalizzazione non viene restituito se il lancio viene interrotto, esattamente come in caso di fallimento a fine canalizzazione.
+
+### Il bersaglio che si allontana
+
+Se durante la canalizzazione è il **bersaglio** ad andarsene — fugge, viene trascinato altrove, cambia stanza per qualunque motivo — l'incantesimo si disperde: al termine dei due secondi il gioco controlla che il bersaglio sia ancora nella stanza del lanciatore (o fra gli oggetti che il lanciatore porta con sé), e se non c'è l'energia si perde, con il mana già speso.
+
+Fino all'audit totale non era così: l'incantesimo raggiungeva il bersaglio ovunque fosse andato, e si poteva finire con un dardo di fuoco chi era già scappato. La regola è la stessa che la fonte applica al lanciatore (che interrompe il lancio se lascia la stanza), estesa al bersaglio come scelta di design dichiarata.
+
+Fanno eccezione, per loro stessa natura, gli incantesimi pensati per raggiungere qualcuno lontano: **Varco Dimensionale**, **Evocazione**, **Teletrasporto**, **Evoca Antico**, **Anima Arma**, **Agonia** e **Incognito**.
+
+### Incantesimi che agiscono solo sugli oggetti
+
+Sette incantesimi lavorano su un oggetto e, secondo la fonte, rischiano di distruggerlo: **Consistenza**, **Permanenza**, **Universalità**, **Lama della Furia**, **Ricarica**, **Anima Arma** e **Personalizza Arma**. Accettano come bersaglio **solo un oggetto inanimato**: su un personaggio, un NPC, una stanza o un'uscita il lancio viene rifiutato prima di cominciare, e il mana non viene speso.
+
+La regola esiste per una ragione precisa, documentata nel capitolo dello staff: prima dell'audit totale, `CAST CONSISTENCE` senza argomenti mirava al lanciatore stesso, e il rischio di "distruggere l'oggetto" poteva **cancellare dal database il personaggio** — il proprio, o quello di un altro giocatore presente.
 
 ### Percentuale di successo e tiro salvezza del bersaglio
 

@@ -172,6 +172,8 @@ equipment / eq                — mostra tutto ciò che si indossa/impugna, per 
 
 Confermato dalla fonte: `WEAR` e `WIELD` sono comandi distinti; l'efficacia in combattimento dipende dalla **skill legata al tipo di arma impugnata** ("it doesn't matter which weapon you prefer, as long as you're good at whichever one you're carrying"), non dall'arma in sé; gli oggetti hanno un livello massimo d'uso fino a 10 livelli sopra il proprio, estendibile con "talent raising items" (oggetti che alzano temporaneamente il livello effettivo); l'equipaggiamento si deteriora e va riparato.
 
+Un oggetto indossato o impugnato che **lascia il personaggio** — con `DROP`, `GIVE`, un furto, un contenitore, o alla morte quando finisce nel cadavere — smette automaticamente di essere indossato, esattamente come con `REMOVE`. Fino all'audit totale non succedeva: una corazza lasciata a terra continuava a contare nella classe armatura di chi l'aveva lasciata, e una spada ceduta a un compagno restava impugnata anche da chi l'aveva data — una sola arma per due giocatori.
+
 Non specificato dalla fonte (scelte di design esplicite): lo slot esatto per ogni tipo di oggetto (nel porting: arma, scudo, testa, corpo, mani, gambe, piedi, amuleto — un sottoinsieme ragionevole rispetto ai 20+ slot tipici di molti MUD Diku-derivati), e le formule numeriche precise di danno/classe armatura/degrado.
 
 ### Degrado in combattimento

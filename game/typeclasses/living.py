@@ -48,6 +48,56 @@ class LivingMixin:
         # leggono db.invisibile ad ogni valutazione (vedi server/conf/lockfuncs.py).
         self.locks.add("view:invisibilita_permessa();search:invisibilita_permessa()")
 
+    def at_object_leave(self, moved_obj, target_location, **kwargs):
+        """Un oggetto sta lasciando questa entita' (DROP, GIVE, furto,
+        contenitore, cadavere alla morte...): se era indossato o impugnato,
+        smette di esserlo. Vedi world/equipment.py:togli_se_indossato - prima
+        dell'audit totale una corazza lasciata a terra continuava a contare
+        nella classe armatura di chi l'aveva lasciata."""
+        super().at_object_leave(moved_obj, target_location, **kwargs)
+        from world.equipment import togli_se_indossato
+        togli_se_indossato(self, moved_obj)
+
+    # Valori di base di ogni entita' vivente, gli stessi assegnati alla
+    # creazione da at_living_creation(). Usati da completa_default_mancanti().
+    DEFAULT_VIVENTI = {
+        "hp": 20, "hp_max": 20, "skills": dict, "combat_target": None,
+        "wimpy_soglia": 0, "wimpy_direzione": None, "bonus_colpire": 0,
+        "equip": dict, "stati": dict, "invisibile": False, "posizione": "in_piedi",
+    }
+
+    def completa_default_mancanti(self):
+        """Assegna i valori di base SOLO agli attributi che mancano.
+
+        Esiste perche' il mondo e' cresciuto nel tempo: un'entita' creata
+        prima che un certo default venisse introdotto non l'ha mai ricevuto.
+        L'audit totale ha trovato 183 entita' senza "posizione" e "stati" e
+        78 senza "equip" (innocue: chi le legge usa sempre "or {}"), ma
+        soprattutto il Dr. Henry Armitage (#29), creato fra i primissimi
+        oggetti del mondo, SENZA PUNTI VITA: qualunque cura su di lui
+        sollevava TypeError, e subisci_danno ((hp or 0) - danno) lo avrebbe
+        ucciso al primo colpo - lasciando la stanza di partenza senza il
+        suo unico istruttore di incantesimi.
+
+        A differenza di at_living_creation(), che azzera bersaglio e bonus
+        temporanei, qui non si tocca nulla che abbia gia' un valore: si puo'
+        chiamare su un'entita' in pieno combattimento. Ritorna l'elenco dei
+        campi completati."""
+        completati = []
+        for campo, predefinito in self.DEFAULT_VIVENTI.items():
+            if self.attributes.has(campo):
+                continue
+            valore = predefinito() if callable(predefinito) else predefinito
+            self.attributes.add(campo, valore)
+            completati.append(campo)
+        if self.attributes.has("hp") and self.db.hp is None:
+            self.db.hp = self.db.hp_max or 20
+            completati.append("hp")
+        if self.attributes.has("hp_max") and self.db.hp_max is None:
+            self.db.hp_max = max(20, self.db.hp or 0)
+            completati.append("hp_max")
+        return completati
+
     @property
     def vivo(self):
         return (self.db.hp or 0) > 0

@@ -310,7 +310,6 @@ def copertura():
 
     senza = []
     for c in gioco:
-        nomi = set(ALIAS_ITALIANI.get(c.key, ())) | {c.key}
         # un comando "coperto" ha almeno un nome che non sia la sola
         # chiave inglese; i comandi gia' italiani di loro contano.
         if not ALIAS_ITALIANI.get(c.key) and not _sembra_italiano(c):

@@ -254,6 +254,10 @@ class CmdReply(MuxCommand):
             return
         from evennia.comms.models import Msg
         account = caller.account
+        if account is None:
+            # un NPC comandato con ORDER: non riceve messaggi privati
+            caller.msg("Solo un giocatore puo' rispondere a un messaggio privato.")
+            return
         ricevuti = Msg.objects.get_messages_by_receiver(account).order_by("-db_date_created")
         ultimo = next((m for m in ricevuti if m.senders), None)
         if not ultimo:
@@ -286,6 +290,14 @@ class CmdIgnore(MuxCommand):
 
     def func(self):
         caller = self.caller
+        # account_caller=True: il chiamante e' l'account. Un NPC comandato
+        # con ORDER non ne ha uno, e caller sarebbe None (audit totale).
+        if caller is None:
+            # self.msg scriverebbe proprio a self.caller (None): si risponde
+            # all'entita' su cui il comando e' definito
+            if self.obj:
+                self.obj.msg("Solo un giocatore puo' ignorare qualcuno.")
+            return
         ignorati = caller.db.ignora or set()
         if not self.args:
             if not ignorati:

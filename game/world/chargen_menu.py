@@ -285,6 +285,11 @@ def menunode_casuale_risultato(caller, raw_string="", prof_id=None, nome=None, g
     # (l'ultimo nodo scritto prima di arrivarci), cosi' un'eventuale ripresa
     # torna li' invece di rompersi - basta rigenerare di nuovo, costa un
     # secondo.
+    # Rinforzo (audit totale): anche se chargen_step non punta piu' qui,
+    # un arrivo senza argomenti deve riportare alla scelta della modalita'
+    # invece di sollevare KeyError davanti a un giocatore appena arrivato.
+    if prof_id not in NEWBIE_PROFESSIONS:
+        return menunode_modalita(caller, raw_string, **kwargs)
     prof = NEWBIE_PROFESSIONS[prof_id]
     razza_nome = RACES[prof["razza"]]["nome_plurale"]
     attr = prof["attributi"]
@@ -304,6 +309,8 @@ DEX {char.attributes.get('stat_dex', category='cthulhu')} \
 CON {char.attributes.get('stat_con', category='cthulhu')} \
 FOR.{char.attributes.get('stat_luck', category='cthulhu')} \
 CAR.{char.attributes.get('stat_cha', category='cthulhu')})
+        Modificatori della professione: STR {attr['str']}  INT {attr['int']}  \
+WIS {attr['wis']}  DEX {attr['dex']}  CON {attr['con']}  FOR.{attr['luck']}  CAR.{attr['cha']}
 
         Non ti convince? Puoi rigenerare tutto da capo.
     """)

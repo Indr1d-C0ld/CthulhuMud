@@ -18,6 +18,7 @@
 - [Installazione](#installazione)
 - [Primo avvio](#primo-avvio)
 - [Ricostruire il mondo dal codice](#ricostruire-il-mondo-dal-codice)
+- [Come viene collaudato](#come-viene-collaudato)
 - [Distribuzione (systemd)](#distribuzione-systemd)
 - [Struttura del progetto](#struttura-del-progetto)
 - [Licenza](#licenza)
@@ -110,7 +111,7 @@ ordinati, gli interni degli edifici pendono di lato.
 
 ## Il Codex
 
-[`codex/codex_cthulhumud.pdf`](codex/codex_cthulhumud.pdf) è il manuale di gioco completo: 140 pagine che coprono ogni sistema (personaggio, magia, combattimento, economia, luoghi, comunicazione, strumenti di staff), con fonti citate e distinzione esplicita fonte/scelta di design. Rigenerabile da sorgente con `bash codex/build.sh` (richiede `pandoc` e `weasyprint`).
+[`codex/codex_cthulhumud.pdf`](codex/codex_cthulhumud.pdf) è il manuale di gioco completo: 145 pagine che coprono ogni sistema (personaggio, magia, combattimento, economia, luoghi, comunicazione, strumenti di staff), con fonti citate e distinzione esplicita fonte/scelta di design. Rigenerabile da sorgente con `bash codex/build.sh` (richiede `pandoc` e `weasyprint`).
 
 ## Requisiti
 
@@ -152,10 +153,42 @@ Il mondo è stato ricostruito per intero a partire da un database vuoto,
 ottenendo **240 stanze e 492 uscite identiche** a quelle in esercizio,
 senza errori.
 
+L'ultima fase è di manutenzione: completa gli attributi di base mancanti
+di personaggi e NPC nati prima che certi valori predefiniti esistessero,
+senza toccare quelli che un valore ce l'hanno già. È così che il Dr.
+Armitage, l'istruttore della stanza di partenza, ha riavuto i punti vita
+che non aveva mai avuto.
+
 ```
 costruiscimondo           esegue tutte le fasi
 costruiscimondo/elenco    mostra le fasi senza eseguirle
 ```
+
+## Come viene collaudato
+
+Il gioco è passato per più audit completi, l'ultimo dei quali non si è
+limitato a leggere il codice ma ha **eseguito ogni sua parte** dentro il
+server vivo, con personaggi usa-e-getta in stanze temporanee e un confronto
+dello stato globale prima e dopo:
+
+| cosa | esito |
+|---|---|
+| ogni comando, social compresi, senza argomenti e su un bersaglio (768 esecuzioni) | nessun errore imprevisto |
+| ogni incantesimo in ogni situazione raggiungibile da `CAST` (696 esecuzioni) | nessun errore |
+| un personaggio per ciascuna delle 16 professioni di partenza | tutti nascono in un luogo completo e percorribile |
+| ricostruzione del mondo da un database vuoto | 240 stanze e 492 uscite identiche |
+| analisi statica di tutto il codice | nessun nome indefinito |
+| log della partita reale | letti e ricondotti alla causa uno per uno |
+
+Quell'audit ha trovato e corretto, fra gli altri, un difetto grave: quattro
+incantesimi pensati per gli oggetti potevano, con una certa probabilità,
+**cancellare dal database il personaggio** su cui venivano lanciati — anche
+quello di un altro giocatore. E un exploit di duplicazione: un'arma ceduta
+a un compagno restava impugnata anche da chi l'aveva data.
+
+Il resoconto completo, compresi i falsi allarmi e un errore commesso
+dall'audit stesso, sta nel capitolo dello staff del
+[Codex](codex/codex_cthulhumud.pdf).
 
 ## Distribuzione (systemd)
 

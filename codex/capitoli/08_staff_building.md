@@ -343,3 +343,135 @@ cardinali e `specials` per quelle con nome proprio, perché nel nostro
 mondo il 54% è del secondo tipo e un client non ha modo di distinguerle
 da solo. Il pacchetto Mudlet in `client/mudlet/` dispone le prime sulla
 griglia e tratta le seconde come collegamenti speciali.
+
+## Audit totale: eseguire tutto, non solo leggerlo
+
+Gli audit precedenti controllavano strutture dati, metadati e un campione
+di meccaniche dal vivo. Questo ha fatto un passo in più: **eseguire
+davvero** ogni parte del gioco dentro il server, e leggere i log della
+partita reale.
+
+| cosa | quante esecuzioni | esito |
+|---|---|---|
+| ogni comando, social compresi, senza argomenti e su un bersaglio | 768 | un solo traceback residuo, voluto (vedi sotto) |
+| ogni incantesimo, in ogni situazione raggiungibile da CAST | 696 | zero guasti |
+| nascita di un personaggio per ciascuna professione di partenza | 16 | tutte in un hub completo e percorribile |
+| meccaniche toccate dalle correzioni | 35 controlli | tutti superati |
+| ricostruzione del mondo da un database vuoto | — | 240 stanze e 492 uscite identiche |
+| analisi statica di tutto il codice (pyflakes) | — | zero nomi indefiniti |
+
+Ogni corsa gira in una stanza temporanea con personaggi usa-e-getta,
+annota l'id massimo del database prima di cominciare e alla fine cancella
+tutto ciò che ha id superiore; poi confronta il numero di script, di voci
+d'aiuto, di canali, di account e un'impronta di ServerConfig con quelli di
+partenza. Una stanza cancellata sposta il proprio contenuto in Limbo invece
+di distruggerlo: senza la pulizia per id, i residui dei test sarebbero
+finiti lì.
+
+### I difetti trovati
+
+**Incantesimi che cancellavano personaggi.** Il più grave di tutti gli
+audit. Consistenza, Permanenza, Universalità e Lama della Furia hanno
+`bersaglio_richiesto=True` e non verificavano il tipo del bersaglio;
+la funzione che simula il rischio di "distruggere l'oggetto" chiamava
+`delete()` su qualunque cosa ricevesse. `CAST CONSISTENCE` senza argomenti
+mirava al lanciatore stesso, e con una probabilità fra il 5 e il 35% il
+personaggio veniva **cancellato dal database**; con un nome, poteva
+cancellare un altro giocatore, senza tiro salvezza né protezione PK. È
+emerso perché il personaggio di prova è sparito a metà della corsa.
+Corretto su due livelli: il flag `solo_oggetti` in SPELLS, verificato da
+`lancia_incantesimo` prima di scalare il mana, e la funzione
+`e_oggetto_inanimato()` come ultimo argine dentro la funzione che
+distrugge — usata anche da `sacrifica()`, che non era raggiungibile dal
+comando (cerca solo nell'inventario) ma è chiamata anche da altri percorsi.
+
+**Equipaggiamento duplicabile.** Nessuno toglieva un oggetto
+dall'equipaggiamento quando lasciava il personaggio. Verificato dal vivo:
+una corazza lasciata con DROP continuava a contare nella classe armatura,
+una spada ceduta con GIVE restava impugnata anche da chi l'aveva data.
+Corretto in un punto solo, `LivingMixin.at_object_leave`, che Evennia
+chiama per qualunque uscita di un oggetto — DROP, GIVE, furti, contenitori,
+e qualunque percorso futuro.
+
+**Ventriloquio non si poteva lanciare.** È l'unico incantesimo che chiede
+insieme un bersaglio e un testo, ma CAST gestiva solo l'uno o l'altro:
+tutto ciò che seguiva il nome diventava testo, il bersaglio restava vuoto,
+e il lancio veniva rifiutato. Ora la prima parola è il bersaglio.
+
+**Il bersaglio in fuga veniva colpito comunque.** Se il bersaglio lasciava
+la stanza durante i due secondi di canalizzazione, l'incantesimo lo
+raggiungeva ovunque fosse. Ora si disperde, tranne per gli incantesimi a
+raggio mondiale (lo stesso elenco con cui CAST decide di cercare il
+bersaglio in tutto il mondo).
+
+**Il Dr. Armitage senza punti vita.** L'unico istruttore di incantesimi
+della stanza di partenza è fra i primissimi oggetti del mondo (`#29`),
+creato prima che esistessero i valori di base degli NPC: aveva
+`hp=None`. Ogni cura su di lui sollevava un errore, e `subisci_danno`
+l'avrebbe ucciso al primo colpo — basta un neofita che provi *Presa
+Folgorante*, che Armitage stesso insegna, proprio su Armitage. Il trigger
+"Niente violenza nella sala di lettura" blocca solo KILL. Corretto con
+`completa_default_mancanti()`, che assegna i valori di base solo ai campi
+che mancano senza toccare gli altri, e che ora è una fase di
+`costruiscimondo`: ha completato 183 entità nate prima di certi default.
+
+**Sei incantesimi rotti sugli NPC.** Ristoro, Passo Leggero, Trasferisci
+Mana, Cura Leggera, Falò Magico e Drena Vitalità facevano
+`min(bersaglio.db.X_max, …)`, ma gli NPC non hanno mana, movimento né
+sanità massimi. `CAST REFRESH <npc>` finiva in un errore. L'aiutante
+`_ricarica()` tratta un massimo assente come "questa riserva non esiste".
+Stesso difetto nel cibo magico dato con FEED a un NPC e nello script di
+rigenerazione.
+
+**Callback programmate su oggetti spariti.** Cinque `delay(N, x.delete)`
+provavano a cancellare un oggetto già sparito — un alleato evocato ucciso,
+il cibo creato per magia e poi mangiato prima dei suoi trenta minuti — e
+tre callback (fine di Ammaliare, completamento del lancio, fine della
+seduta di Psicologia) non controllavano che il personaggio esistesse
+ancora. Tutto finiva nel log come "Unhandled error in Deferred".
+
+**Un refuso dentro Evennia.** In `evennia/server/inputfuncs.py` la funzione
+del `REPORT` MSDP contiene `kwargs["outputfunc_name":"report"]`, con i due
+punti al posto di `] =`. Mudlet la invoca a ogni connessione: 14 errori nel
+log in una settimana. Corretto nel nostro `server/conf/inputfuncs.py`, che
+Evennia carica dopo il proprio e che sostituisce le funzioni omonime — una
+patch dentro la libreria sparirebbe al primo aggiornamento. Nello stesso
+file sono ora gestiti i quattro messaggi che Mudlet manda alla connessione
+e che Evennia non riconosceva.
+
+**Minori.** IGNORE e REPLY eseguiti da un NPC con ORDER (senza account);
+lo schermo del personaggio casuale che non mostrava i modificatori della
+professione; una guardia contro un arrivo senza argomenti nello stesso
+schermo.
+
+### Un errore dell'audit stesso
+
+Per lanciare le corse mi collegavo come admin e lo incarnavo. `ic admin`
+lo faceva ricomparire dov'era — una via di Arkham con mostri erranti — e
+mentre il server eseguiva le corse lo hanno attaccato: 45 punti vita, 11 di
+sanità e 5 di esperienza persi. È stato ripristinato ai valori precedenti,
+e da allora le corse si lanciano **fuori dal personaggio**: `@py` funziona
+anche a livello di account, e il personaggio non entra mai in gioco. Le
+tre suite dei turni precedenti che hanno bisogno di incarnarlo fotografano
+prima lo stato di admin e lo ripristinano dopo, con verifica campo per campo.
+
+### Cosa non era un difetto
+
+- `@scripts manichino` registra un traceback **di proposito**:
+  "manichino" non è uno script noto, il comando prova a crearne uno con
+  quel percorso, fallisce e lo annota con `log_trace()` prima di rispondere.
+- Le 183 entità senza `posizione` e `stati`, e le 78 senza `equip`, non
+  rischiavano nulla: ogni lettura di quei campi è difesa con `or {}`.
+- `/accounts/login/` e `/password-reset/` rispondono 404 perché non
+  esistono: il login di Evennia sta in `/auth/login/`. Tutti gli 11 link
+  realmente presenti nelle pagine pubbliche rispondono.
+
+### Controlli che rendono irripetibili questi difetti
+
+L'audit statico ha ora una sezione di regressioni: ogni incantesimo che
+può distruggere il bersaglio deve essere marcato `solo_oggetti`; ogni
+entità vivente deve avere i punti vita; un incantesimo che chiede
+bersaglio e testo deve trovare CAST pronto a gestirlo; e nessuna
+cancellazione programmata può essere un `delay(N, x.delete)` nudo — quest'ultima
+analizzata sull'albero sintattico, perché una docstring che descrive il
+vecchio difetto non deve far scattare il controllo.

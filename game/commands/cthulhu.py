@@ -901,7 +901,23 @@ def _esegui_cast(caller, args, rituale=False):
     spell = SPELLS[spell_id]
     bersaglio = None
     testo = None
-    if spell.get("richiede_testo"):
+    if spell.get("richiede_testo") and spell.get("bersaglio_richiesto"):
+        # Un bersaglio E un testo: la prima parola e' il bersaglio, il resto
+        # il testo (CAST VENTRILOQUATE <bersaglio> <messaggio>).
+        # Difetto corretto nell'audit totale: prima si gestiva solo l'uno o
+        # l'altro caso, quindi tutto cio' che seguiva il nome diventava
+        # testo, il bersaglio restava vuoto, e lancia_incantesimo rifiutava
+        # con "richiede un bersaglio" - Ventriloquio non si poteva lanciare
+        # in alcun modo.
+        parti = (resto or "").split(None, 1)
+        if len(parti) < 2:
+            caller.msg(f"Uso: cast '{spell['nome']}' <bersaglio> <testo>")
+            return
+        bersaglio = caller.search(parti[0])
+        if not bersaglio:
+            return
+        testo = parti[1]
+    elif spell.get("richiede_testo"):
         testo = resto or None
     elif resto:
         # Fase K, sesta tornata: Varco Dimensionale/Evocazione/Teletrasporto

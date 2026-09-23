@@ -31,6 +31,15 @@ class NPC(LivingMixin, ObjectParent, DefaultCharacter):
         self.db.protetto = False   # world/pk.py: KILL rifiutato, serve MURDER (rende criminale chi lo usa)
         self.locks.add("puppet:false()")  # mai puppettabile da un account (salvo MINDTRANSFER attivo)
 
+    # Gli stessi valori di at_object_creation qui sopra, per completare gli
+    # NPC creati prima che esistessero (vedi LivingMixin.completa_default_mancanti).
+    DEFAULT_VIVENTI = {
+        **LivingMixin.DEFAULT_VIVENTI,
+        "skills_insegnabili": list, "is_practice_trainer": False, "livello": 1,
+        "alignment": 0, "non_morto": False, "ostile": False,
+        "yithian_originale": None, "protetto": False,
+    }
+
     def get_display_name(self, looker, **kwargs):
         """helps/bounty.txt: "the subject of your search will have the
         [TARGET] flag next to its name" - mostrato solo a chi ha

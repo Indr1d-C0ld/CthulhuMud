@@ -103,7 +103,10 @@ def mangia(personaggio, oggetto):
     if getattr(personaggio, "in_combattimento", False):
         return False, "Non puoi mangiare mentre sei in combattimento."
     if oggetto.db.mana_ripristino:
-        personaggio.db.mana = min(personaggio.db.mana_max, (personaggio.db.mana or 0) + oggetto.db.mana_ripristino)
+        # FEED puo' far mangiare un NPC, che non ha mana_max: in quel caso
+        # l'oggetto si consuma senza effetto invece di sollevare TypeError.
+        if personaggio.db.mana_max is not None:
+            personaggio.db.mana = min(personaggio.db.mana_max, (personaggio.db.mana or 0) + oggetto.db.mana_ripristino)
         oggetto.delete()
         return True, f"Mangi {oggetto.key} e senti il mana rifluire in te."
     valore = oggetto.db.cibo

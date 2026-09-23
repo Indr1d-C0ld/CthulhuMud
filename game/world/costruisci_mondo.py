@@ -176,7 +176,31 @@ POPOLAMENTO = [
      "fucine e fabbri"),
     ("world.popola_cristalli_focus", "popola_cristalli_focus",
      "cristalli focus"),
+
+    # --- Manutenzione ---
+    # Per ultima: completa gli attributi di base mancanti di chi e' stato
+    # creato prima che quei default esistessero (il caso del Dr. Armitage,
+    # senza punti vita). Non crea oggetti, quindi il contatore di questa
+    # fase resta a zero anche quando lavora.
+    ("world.costruisci_mondo", "completa_attributi_viventi",
+     "attributi di base mancanti di personaggi e NPC"),
 ]
+
+
+def completa_attributi_viventi():
+    """Completa gli attributi di base mancanti di ogni personaggio e NPC
+    (typeclasses/living.py:completa_default_mancanti). Non crea oggetti e
+    non tocca valori esistenti. Ritorna {id: [campi completati]} per le
+    sole entita' toccate."""
+    from evennia.objects.models import ObjectDB
+    toccati = {}
+    for o in ObjectDB.objects.filter(
+            db_typeclass_path__in=("typeclasses.characters.Character", "typeclasses.npcs.NPC")):
+        if hasattr(o, "completa_default_mancanti"):
+            campi = o.completa_default_mancanti()
+            if campi:
+                toccati[o.id] = campi
+    return toccati
 
 
 def _esegui(modulo, funzione, descrizione, esito, verboso):

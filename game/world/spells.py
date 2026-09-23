@@ -1119,6 +1119,7 @@ SPELLS = {
     "animate_weapon": {
         "nome": "Anima Arma", "skill_richiesta": "taumathurgy", "costo_mana": 20,
         "bersaglio_richiesto": True,
+        "solo_oggetti": True,
         "descrizione": "Richiama un'arma al suo proprietario, particolarmente utile se "
                        "l'arma e' stata persa o il proprietario e' morto di recente. Perche' "
                        "funzioni, l'arma deve prima essere stata personalizzata con "
@@ -1128,9 +1129,15 @@ SPELLS = {
                        "di scriverne il nome ESATTO e completo, articolo incluso "
                        "(es. 'un pugnale forgiato da Carter').",
     },
+    # "solo_oggetti": l'incantesimo lavora su un oggetto (e puo' distruggerlo).
+    # world/magic.py:lancia_incantesimo rifiuta qualunque bersaglio che non
+    # sia un oggetto inanimato prima di scalare il mana. Introdotto
+    # nell'audit totale: senza, CAST CONSISTENCE senza argomenti poteva
+    # cancellare dal database il personaggio stesso che lo lanciava.
     "consistence": {
         "nome": "Consistenza", "skill_richiesta": "taumathurgy", "costo_mana": 15,
         "bersaglio_richiesto": True,
+        "solo_oggetti": True,
         "descrizione": "Stabilizza un oggetto in decomposizione, impedendogli di "
                        "deperire ulteriormente. Come gli altri incantesimi di Taumaturgia, "
                        "c'e' una probabilita' di distruggere l'oggetto nel tentativo.",
@@ -1138,6 +1145,7 @@ SPELLS = {
     "permanence": {
         "nome": "Permanenza", "skill_richiesta": "taumathurgy", "costo_mana": 25,
         "bersaglio_richiesto": True,
+        "solo_oggetti": True,
         "descrizione": "Rende un oggetto magico resistente a ogni forma di danno, "
                        "quasi indistruttibile. C'e' una probabilita' di distruggere "
                        "l'oggetto nel tentativo.",
@@ -1145,6 +1153,7 @@ SPELLS = {
     "recharge": {
         "nome": "Ricarica", "skill_richiesta": "taumathurgy", "costo_mana": 18,
         "bersaglio_richiesto": True,
+        "solo_oggetti": True,
         "descrizione": "Riempie di nuove cariche un oggetto magico a cariche finite "
                        "(come alcune bacchette o alcuni bastoni), rendendolo di nuovo "
                        "utilizzabile.",
@@ -1152,6 +1161,7 @@ SPELLS = {
     "universality": {
         "nome": "Universalita'", "skill_richiesta": "taumathurgy", "costo_mana": 15,
         "bersaglio_richiesto": True,
+        "solo_oggetti": True,
         "descrizione": "Permette a un oggetto di esistere in ogni zona e area. Questo "
                        "porting non impone alcuna restrizione di zona sul trasporto di "
                        "oggetti: l'incantesimo non ha percio' alcun effetto meccanico "
@@ -1163,6 +1173,7 @@ SPELLS = {
     "personalize_weapon": {
         "nome": "Personalizza Arma", "skill_richiesta": "enchant_weapon", "costo_mana": 15,
         "bersaglio_richiesto": True,
+        "solo_oggetti": True,
         "descrizione": "Imbue un'arma con parte della forza vitale del lanciatore, "
                        "impedendo a chiunque altro di poterla usare. C'e' una probabilita' "
                        "che l'incantesimo distrugga l'arma nel tentativo.",
@@ -1301,6 +1312,7 @@ SPELLS = {
     "blade_of_fury": {
         "nome": "Lama della Furia", "skill_richiesta": "frenzy", "costo_mana": 20,
         "bersaglio_richiesto": True,
+        "solo_oggetti": True,
         "descrizione": "Avvolge un'arma in fiamme magiche furiose, aumentandone di molto il "
                        "danno inflitto. Non permanente; c'e' una probabilita' che l'arma "
                        "venga distrutta.",

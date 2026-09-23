@@ -168,6 +168,13 @@ def lancia_incantesimo(caster, spell_id, bersaglio=None, testo=None, rituale=Fal
         return False, "Questo incantesimo richiede un bersaglio."
     if spell.get("richiede_testo") and not testo:
         return False, "Questo incantesimo richiede un'indicazione (es. una direzione)."
+    # Gli incantesimi che lavorano su un oggetto (e che possono
+    # distruggerlo) non devono mai colpire un essere vivente: vedi il
+    # difetto documentato in _rischio_distrugge_oggetto. Il controllo sta
+    # qui, prima di scalare il mana, cosi' chi sbaglia bersaglio non paga
+    # un lancio andato a vuoto.
+    if spell.get("solo_oggetti") and not e_oggetto_inanimato(bersaglio):
+        return False, "Questo incantesimo agisce solo sugli oggetti: indica quale."
 
     costo = _costo_effettivo(caster, spell)
     if (caster.db.mana or 0) < costo:
@@ -202,6 +209,10 @@ def _completa_lancio(caster):
     stato interrotto nel frattempo (db.incantesimo_in_corso azzerato da
     interrompi_lancio), risolve successo/fallimento e l'eventuale tiro
     salvezza del bersaglio."""
+    # il lanciatore puo' essere stato cancellato durante la canalizzazione
+    # (morte in PERMAPK): la callback programmata arriva comunque
+    if not caster.pk:
+        return
     dati = caster.db.incantesimo_in_corso
     if not dati:
         return
@@ -211,6 +222,21 @@ def _completa_lancio(caster):
     if bersaglio is not None and not bersaglio.pk:
         caster.msg("Il bersaglio non e' piu' disponibile.")
         return
+    # Il bersaglio puo' essersi allontanato durante la canalizzazione.
+    # Prima dell'audit totale l'incantesimo lo raggiungeva comunque,
+    # ovunque fosse andato: si poteva finire con un dardo di fuoco chi era
+    # gia' fuggito in un'altra stanza. Se ne va il LANCIATORE il lancio si
+    # interrompe (at_post_move, confermato dalla fonte); qui si applica la
+    # stessa logica al bersaglio. Fanno eccezione gli incantesimi che per
+    # natura raggiungono bersagli lontani (evocazione, varco, teletrasporto
+    # - lo stesso elenco con cui CAST decide di cercare in tutto il mondo),
+    # e gli oggetti che il lanciatore porta con se'.
+    if bersaglio is not None and bersaglio is not caster:
+        from commands.cthulhu import _INCANTESIMI_BERSAGLIO_GLOBALE
+        vicino = bersaglio.location in (caster.location, caster)
+        if not vicino and spell_id not in _INCANTESIMI_BERSAGLIO_GLOBALE:
+            caster.msg(magia(f"{bersaglio.key} si e' allontanato/a: l'energia dell'incantesimo si disperde."))
+            return
 
     rating_casting = caster.skill_rating("spell_casting")
     rating_specifico = caster.skill_rating(spell["skill_richiesta"])
@@ -270,8 +296,13 @@ def _esegui_effetto(spell_id, caster, bersaglio, testo):
 
 
 def _effetto_cure_light(caster, bersaglio, testo):
-    cura = random.randint(4, 10)
-    bersaglio.db.hp = min(bersaglio.db.hp_max, (bersaglio.db.hp or 0) + cura)
+    # vedi _ricarica: senza, curare un'entita' senza hp_max finiva in un
+    # TypeError. E il messaggio riporta ora i punti davvero recuperati,
+    # non il tiro di dado (a vita quasi piena non coincidono).
+    cura = _ricarica(bersaglio, "hp", random.randint(4, 10))
+    if cura is None:
+        caster.msg(f"{bersaglio.key} non e' qualcosa che si possa curare.")
+        return
     if bersaglio is caster:
         caster.location.msg_contents(magia(
             f"Una luce calda avvolge {caster.key}, che recupera {cura} HP."
@@ -390,10 +421,29 @@ def _danno_area(caster, danno_min, danno_max, verbo, includi_caster=False):
         _infliggi_danno_magico(caster, bersaglio, danno, verbo)
 
 
+def _ricarica(obj, campo, quantita):
+    """Aumenta db.<campo> di quantita, senza superare db.<campo>_max.
+
+    Ritorna i punti effettivamente recuperati, oppure None se l'entita' non
+    ha quella riserva. Gli NPC non hanno mana, movimento ne' sanita'
+    massimi (nessuno dei 217 presenti nel mondo), e l'audit totale ha
+    trovato sei incantesimi che facevano min(bersaglio.db.X_max, ...) senza
+    tenerne conto: CAST REFRESH <npc> finiva in un TypeError. Un massimo
+    assente vuol dire "questa riserva non esiste", non "zero"."""
+    massimo = getattr(obj.db, f"{campo}_max", None)
+    if massimo is None:
+        return None
+    prima = getattr(obj.db, campo) or 0
+    dopo = min(massimo, prima + quantita)
+    setattr(obj.db, campo, dopo)
+    return dopo - prima
+
+
 def _cura(caster, bersaglio, quantita, nome_incant):
-    prima = bersaglio.db.hp or 0
-    bersaglio.db.hp = min(bersaglio.db.hp_max, prima + quantita)
-    guarito = bersaglio.db.hp - prima
+    guarito = _ricarica(bersaglio, "hp", quantita)
+    if guarito is None:
+        caster.msg(f"{bersaglio.key} non e' qualcosa che si possa curare.")
+        return
     if bersaglio is caster:
         caster.location.msg_contents(magia(f"Una luce calda avvolge {caster.key}, che recupera {guarito} HP."))
     else:
@@ -732,11 +782,17 @@ def _effetto_charm_person(caster, bersaglio, testo):
     caster.db.seguaci = seguaci
 
     def _fine_ammaliamento():
+        # Tre minuti dopo, uno dei due puo' non esistere piu' (il
+        # lanciatore morto in PERMAPK o cancellato, il bersaglio ucciso).
+        # Prima veniva controllato solo il bersaglio, e l'audit totale ha
+        # visto la callback schiantarsi scrivendo su un lanciatore
+        # cancellato ("needs to have a value for field id").
         if bersaglio.pk:
             bersaglio.db.padrone = None
-            seguaci_attuali = [s for s in (caster.db.seguaci or []) if s is not bersaglio]
-            caster.db.seguaci = seguaci_attuali
-        bersaglio.msg(magia(f"{bersaglio.key} torna diffidente nei tuoi confronti."))
+            if caster.pk:
+                seguaci_attuali = [s for s in (caster.db.seguaci or []) if s is not bersaglio]
+                caster.db.seguaci = seguaci_attuali
+            bersaglio.msg(magia(f"{bersaglio.key} torna diffidente nei tuoi confronti."))
 
     applica_stato(bersaglio, "ammaliato", 180, None)
     from evennia.utils import delay
@@ -1133,7 +1189,7 @@ def _crea_alleato_temporaneo(caster, nome, livello, hp, skills, secondi_vita, be
     alleato.db.evocato_da = caster
     if bersaglio_iniziale and getattr(bersaglio_iniziale, "vivo", False):
         alleato.avvia_combattimento(bersaglio_iniziale)
-    delay(secondi_vita, alleato.delete)
+    delay(secondi_vita, _elimina_se_esiste, alleato)
     return alleato
 
 
@@ -1270,7 +1326,7 @@ def _effetto_create_spring(caster, bersaglio, testo):
         "Una sorgente magica d'acqua limpida, sgorgata dal nulla.", bevanda=999,
     )
     caster.location.msg_contents(magia(f"{caster.key} evoca una sorgente d'acqua scintillante dal terreno."))
-    delay(600, sorgente.delete)
+    delay(600, _elimina_se_esiste, sorgente)
 
 
 def _effetto_create_potion(caster, bersaglio, testo):
@@ -1484,7 +1540,7 @@ def _effetto_spring_of_blood(caster, bersaglio, testo):
     fontana = create.create_object("typeclasses.objects.Object", key="una sorgente di sangue fresco", location=caster.location)
     fontana.db.desc = "Un magico zampillo di sangue fresco, che presto si prosciughera'."
     fontana.db.bevanda = 25
-    delay(600, fontana.delete)
+    delay(600, _elimina_se_esiste, fontana)
     caster.location.msg_contents(magia(f"{caster.key} evoca {fontana.key}, che presto si prosciughera'."))
 
 
@@ -1692,7 +1748,7 @@ def _effetto_drain_vitality(caster, bersaglio, testo):
         caster.msg(f"{bersaglio.key} non e' un albero: non c'e' vitalita' da drenare.")
         return
     quantita = random.randint(15, 30)
-    caster.db.mana = min(caster.db.mana_max, (caster.db.mana or 0) + quantita)
+    quantita = _ricarica(caster, "mana", quantita) or 0
     caster.location.msg_contents(magia(f"{caster.key} drena {quantita} mana da {bersaglio.key}, che appassisce leggermente."))
 
 
@@ -1793,11 +1849,64 @@ def _effetto_wrath_of_ithaqua(caster, bersaglio, testo):
 
 # --- Taumaturgia + Personalizza Arma -----------------------------------
 
+def _elimina_se_esiste(obj):
+    """Cancellazione programmata con delay(), a prova di oggetto gia' sparito.
+
+    Prima dell'audit totale qui c'erano cinque delay(N, oggetto.delete): se
+    nel frattempo l'oggetto era gia' stato cancellato - un alleato evocato
+    ucciso in combattimento, il cibo creato per magia e poi MANGIATO prima
+    dei suoi 30 minuti di vita - la callback provava a cancellarlo una
+    seconda volta e Evennia sollevava "This object was already deleted!",
+    finendo nel log come "Unhandled error in Deferred"."""
+    try:
+        if obj is not None and obj.pk:
+            obj.delete()
+    except Exception:
+        pass
+
+
+def e_oggetto_inanimato(obj):
+    """Vero solo per un oggetto vero e proprio: non un personaggio, non un
+    NPC, non una stanza, non un'uscita.
+
+    Tutti e quattro discendono dalle classi base di Evennia, quindi il
+    controllo si fa su quelle e non sui nostri typeclass: resta valido
+    anche per un typeclass aggiunto in futuro."""
+    from evennia import DefaultCharacter, DefaultRoom, DefaultExit
+    if obj is None or not getattr(obj, "pk", None):
+        return False
+    return not isinstance(obj, (DefaultCharacter, DefaultRoom, DefaultExit))
+
+
 def _rischio_distrugge_oggetto(caster, oggetto, skill_id, rischio_base=35):
     """Rischio condiviso da Anima Arma/Consistenza/Permanenza/Universalita'/
     Personalizza Arma (confermato dalla fonte per tutti: "carries a chance
     of destroying the object"), stesso schema gia' visto in
-    _effetto_enchant_weapon/enchant_armor: il rischio scende con la skill."""
+    _effetto_enchant_weapon/enchant_armor: il rischio scende con la skill.
+
+    DIFETTO GRAVE CORRETTO (audit totale): qui si chiamava oggetto.delete()
+    senza controllare che cosa fosse l'oggetto. Quattro incantesimi -
+    Consistenza, Permanenza, Universalita', Lama della Furia - non
+    verificavano il tipo del bersaglio, e hanno bersaglio_richiesto=True:
+    CAST CONSISTENCE senza argomenti mirava al lanciatore stesso, e
+    CAST CONSISTENCE <nome> a qualunque giocatore presente. Con una
+    probabilita' fra il 5 e il 35% il personaggio veniva CANCELLATO DAL
+    DATABASE, senza tiro salvezza ne' protezione PK. L'audit l'ha scoperto
+    perche' il personaggio di prova e' sparito a meta' della corsa.
+
+    La regola vera sta ora a monte (il flag "solo_oggetti" in SPELLS,
+    verificato da lancia_incantesimo prima di scalare il mana); questo e'
+    l'ultimo argine, per qualunque percorso futuro che arrivi qui senza
+    passare di la': un essere vivente, una stanza o un'uscita non vengono
+    mai cancellati, e l'incantesimo fallisce senza effetto."""
+    if not e_oggetto_inanimato(oggetto):
+        from evennia.utils import logger
+        logger.log_warn(
+            f"_rischio_distrugge_oggetto: rifiutata la distruzione di "
+            f"{getattr(oggetto, 'key', oggetto)!r} (non e' un oggetto inanimato); "
+            f"lanciatore {getattr(caster, 'key', caster)!r}, skill {skill_id}.")
+        caster.msg("Questo incantesimo agisce solo sugli oggetti.")
+        return True
     rischio = max(5, rischio_base - caster.skill_rating(skill_id) // 3)
     if random.randint(1, 100) <= rischio:
         caster.location.msg_contents(magia(f"L'energia sfugge al controllo: {oggetto.key} viene distrutto!"))
@@ -2001,6 +2110,13 @@ def _effetto_bestow_blessing(caster, bersaglio, testo):
 # -- Frenesia --
 
 def _effetto_blade_of_fury(caster, bersaglio, testo):
+    # "Avvolge un'arma in fiamme magiche" (world/spells.py): senza questo
+    # controllo si poteva lanciare su qualunque oggetto - e prima
+    # dell'audit totale anche su un personaggio, con il rischio di
+    # cancellarlo (vedi _rischio_distrugge_oggetto).
+    if not e_oggetto_inanimato(bersaglio) or not bersaglio.db.tipo_arma:
+        caster.msg(f"{getattr(bersaglio, 'key', 'Quello')} non e' un'arma.")
+        return
     if _rischio_distrugge_oggetto(caster, bersaglio, "frenzy", rischio_base=20):
         return
     bersaglio.db.bonus_danno = (bersaglio.db.bonus_danno or 0) + 4
@@ -2165,7 +2281,7 @@ def _effetto_lesser_creation(caster, bersaglio, testo):
     from evennia.utils import create, delay
     oggetto = create.create_object("typeclasses.objects.Object", key=scelta, location=caster)
     oggetto.db.desc = f"{scelta.capitalize()}, formata dal nulla. Non e' permanente."
-    delay(1800, oggetto.delete)
+    delay(1800, _elimina_se_esiste, oggetto)
     caster.msg(magia(f"Formi dal nulla {scelta}."))
 
 
@@ -2179,7 +2295,7 @@ def _effetto_greater_creation(caster, bersaglio, testo):
     oggetto.db.desc = f"{scelta.capitalize()}, formata dal nulla. Non e' permanente."
     if scelta == "un'incudine":
         oggetto.db.incudine = True
-    delay(1800, oggetto.delete)
+    delay(1800, _elimina_se_esiste, oggetto)
     caster.msg(magia(f"Formi dal nulla {scelta}."))
 
 
@@ -2514,9 +2630,11 @@ def _effetto_magic_zapper(caster, bersaglio, testo):
 
 def _effetto_magical_campfire(caster, bersaglio, testo):
     ripristino = 15
-    caster.db.hp = min(caster.db.hp_max, caster.db.hp + ripristino)
-    caster.db.mana = min(caster.db.mana_max, caster.db.mana + ripristino)
-    caster.db.move = min(caster.db.move_max, caster.db.move + ripristino * 2)
+    # il lanciatore puo' essere un NPC posseduto da uno Yithiano, senza
+    # mana ne' movimento: _ricarica ignora le riserve che non ha
+    _ricarica(caster, "hp", ripristino)
+    _ricarica(caster, "mana", ripristino)
+    _ricarica(caster, "move", ripristino * 2)
     caster.location.msg_contents(magia(f"{caster.key} accende un falo' arcano, recuperando immediatamente le forze."))
 
 
@@ -2550,8 +2668,11 @@ def _effetto_mana_transfer(caster, bersaglio, testo):
     if quantita <= 0:
         caster.msg("Non hai mana da trasferire.")
         return
+    if bersaglio.db.mana_max is None:
+        caster.msg(f"{bersaglio.key} non ha alcuna riserva di mana da colmare.")
+        return
     caster.db.mana -= quantita
-    bersaglio.db.mana = min(bersaglio.db.mana_max, (bersaglio.db.mana or 0) + quantita)
+    _ricarica(bersaglio, "mana", quantita)
     caster.location.msg_contents(magia(f"{caster.key} trasferisce parte del proprio mana a {bersaglio.key}."))
 
 
@@ -2573,7 +2694,7 @@ def _effetto_primal_scream(caster, bersaglio, testo):
 
 
 def _effetto_refresh(caster, bersaglio, testo):
-    bersaglio.db.move = min(bersaglio.db.move_max, (bersaglio.db.move or 0) + random.randint(20, 40))
+    _ricarica(bersaglio, "move", random.randint(20, 40))
     from world.effetti import rimuovi_stato
     rimuovi_stato(bersaglio, "affaticato")
     caster.location.msg_contents(magia(f"{bersaglio.key} si sente un po' piu' riposato/a."))
@@ -2598,7 +2719,7 @@ def _effetto_slow(caster, bersaglio, testo):
 
 
 def _effetto_step_lightly(caster, bersaglio, testo):
-    bersaglio.db.move = min(bersaglio.db.move_max, (bersaglio.db.move or 0) + random.randint(60, 100))
+    _ricarica(bersaglio, "move", random.randint(60, 100))
     caster.location.msg_contents(magia(f"{bersaglio.key} si sente molto piu' riposato/a."))
 
 

@@ -142,6 +142,14 @@ def sacrifica(personaggio, oggetto, automatico=False):
         return False, "Non adori nessuna divinita': usa WORSHIP <divinita> per sceglierne una."
     if oggetto is personaggio:
         return False, "Non puoi sacrificare te stesso."
+    # Ultimo argine (audit totale): SACRIFICE cerca solo nell'inventario, ma
+    # questa funzione e' chiamata anche da altri percorsi (AUTOSAC sui
+    # cadaveri) e cancella cio' che riceve. Un essere vivente, una stanza o
+    # un'uscita non devono mai poterci arrivare - vedi lo stesso difetto,
+    # reale, trovato in world/magic.py:_rischio_distrugge_oggetto.
+    from world.magic import e_oggetto_inanimato
+    if not e_oggetto_inanimato(oggetto):
+        return False, f"{getattr(oggetto, 'key', 'Quello')} non e' qualcosa che si possa sacrificare."
 
     valore = getattr(oggetto.db, "valore", None)
     if not valore:

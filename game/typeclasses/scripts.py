@@ -447,8 +447,11 @@ class EffettoPeriodicoScript(Script):
             # Fase K, sesta tornata: modalita' cura (es. Rigenerazione) -
             # stesso script, segno opposto, nessuna gestione morte.
             prima = obj.db.hp or 0
-            obj.db.hp = min(obj.db.hp_max, prima + quantita)
-            quantita = obj.db.hp - prima
+            # un'entita' senza hp_max non ha nulla da rigenerare: senza
+            # questo controllo il TypeError si ripeteva a ogni scatto
+            if obj.db.hp_max is not None:
+                obj.db.hp = min(obj.db.hp_max, prima + quantita)
+            quantita = (obj.db.hp or 0) - prima
             if self.db.messaggio_tick and quantita:
                 obj.msg(self.db.messaggio_tick.format(danno=quantita))
             morto = False

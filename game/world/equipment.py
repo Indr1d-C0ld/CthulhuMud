@@ -159,3 +159,30 @@ def skill_arma(personaggio):
     if arma and bonus_arma_attivo(arma) and arma.db.tipo_arma in SKILLS:
         return arma.db.tipo_arma
     return None
+
+
+def togli_se_indossato(personaggio, oggetto):
+    """Toglie oggetto dall'equipaggiamento di personaggio, se lo indossa.
+
+    Stessa operazione di REMOVE (commands/cthulhu_equip.py): lo slot torna
+    vuoto e l'oggetto non e' piu' "indossato". Chiamata da
+    LivingMixin.at_object_leave, cioe' ogni volta che un oggetto lascia un
+    personaggio o un NPC - per DROP, GIVE, un furto, un contenitore, o
+    qualunque percorso futuro.
+
+    Difetto corretto nell'audit totale: prima nessuno toglieva
+    l'equipaggiamento quando l'oggetto se ne andava. Verificato dal vivo:
+    DROP di una corazza indossata la lasciava a terra ma la classe armatura
+    continuava a contarla; GIVE di una spada impugnata la consegnava
+    all'amico ma chi l'aveva ceduta continuava a impugnarla. Un exploit di
+    duplicazione: una sola armatura, o una sola arma, per due giocatori.
+
+    Ritorna True se l'oggetto era indossato."""
+    equip = personaggio.db.equip or {}
+    slot = next((s for s, o in equip.items() if o is oggetto), None)
+    if not slot:
+        return False
+    equip[slot] = None
+    personaggio.db.equip = equip
+    oggetto.db.indossato = False
+    return True

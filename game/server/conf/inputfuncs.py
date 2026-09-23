@@ -50,3 +50,54 @@ as argument.
 #
 #     """
 #     pass
+
+
+# ---------------------------------------------------------------------
+# Correzioni per i client MUD (audit totale)
+# ---------------------------------------------------------------------
+#
+# Questo modulo viene caricato DOPO evennia.server.inputfuncs
+# (settings.INPUT_FUNC_MODULES) e le funzioni con lo stesso nome
+# sostituiscono quelle di Evennia: e' il posto previsto per correggerle
+# senza toccare la libreria, dove una modifica sparirebbe al primo
+# aggiornamento.
+
+
+def msdp_report(session, *args, **kwargs):
+    """MSDP REPORT, corretto.
+
+    In Evennia 6.1 (evennia/server/inputfuncs.py) la funzione originale
+    contiene un refuso - kwargs["outputfunc_name":"report"], con i due
+    punti al posto di "] =" - che solleva KeyError a ogni chiamata. Mudlet
+    la invoca a ogni connessione: il log del server ne conteneva 14 in una
+    settimana, tutte cadute durante le sessioni di gioco."""
+    from evennia.server.inputfuncs import monitor
+    kwargs["outputfunc_name"] = "report"
+    monitor(session, *args, **kwargs)
+
+
+def client_name(session, *args, **kwargs):
+    """Core.Hello di Mudlet (nome del client). Lo si registra nei flag del
+    protocollo, dove Evennia tiene gia' il nome ricavato dal TTYPE, invece
+    di lasciare a ogni connessione un "Input command not recognized"."""
+    if args:
+        session.update_flags(CLIENTNAME=str(args[0]))
+
+
+def client_version(session, *args, **kwargs):
+    """Core.Hello di Mudlet (versione del client). Vedi client_name."""
+    if args:
+        session.update_flags(CLIENTVERSION=str(args[0]))
+
+
+def supports_add(session, *args, **kwargs):
+    """Core.Supports.Add: il client annuncia i moduli GMCP che gestisce.
+    Il server manda comunque Room.Info e Char.Vitals a chi ha negoziato
+    il GMCP, quindi non c'e' nulla da fare: si accetta in silenzio."""
+    return
+
+
+def external_discord_get(session, *args, **kwargs):
+    """Richiesta dell'integrazione Discord di Mudlet: il gioco non ha una
+    presenza Discord da comunicare. Accettata in silenzio."""
+    return
